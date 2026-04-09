@@ -42,6 +42,7 @@ class AudioManager {
             try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
             try engine.start()
+            MusicEngine.shared.attach(to: engine)
             isSetup = true
         } catch {
             print("AudioManager setup failed: \(error)")

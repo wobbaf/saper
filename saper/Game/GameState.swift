@@ -270,6 +270,7 @@ class GameState: ObservableObject {
         GamePersistence.clearSave()
 
         syncAudioHaptics()
+        MusicEngine.shared.start()
 
         if mode == .timed {
             timerManager.start()
@@ -297,6 +298,7 @@ class GameState: ObservableObject {
         isPlaying = true
 
         syncAudioHaptics()
+        MusicEngine.shared.start()
         return true
     }
 
@@ -305,10 +307,13 @@ class GameState: ObservableObject {
         AudioManager.shared.sfxVolume = profile.sfxVolume
         AudioManager.shared.ambienceVolume = profile.ambienceVolume
         HapticsManager.shared.isEnabled = profile.hapticsEnabled
+        MusicEngine.shared.isEnabled = profile.soundEnabled
+        MusicEngine.shared.outputVolume = profile.ambienceVolume * 0.35
     }
 
     func pauseGame() {
         isPaused = true
+        MusicEngine.shared.pause()
         if gameMode == .timed {
             timerManager.pause()
         }
@@ -316,6 +321,7 @@ class GameState: ObservableObject {
 
     func resumeGame() {
         isPaused = false
+        MusicEngine.shared.resume()
         if gameMode == .timed {
             timerManager.resume()
         }
@@ -324,6 +330,7 @@ class GameState: ObservableObject {
     func endGame() {
         isGameOver = true
         isPlaying = false
+        MusicEngine.shared.stop()
         if gameMode == .timed {
             timerManager.stop()
         }
