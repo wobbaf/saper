@@ -36,8 +36,8 @@ enum Constants {
 
     // Camera
     static let minCameraScale: CGFloat = 0.05
-    static let maxCameraScale: CGFloat = 1.5
-    static let defaultCameraScale: CGFloat = 0.6
+    static let maxCameraScale: CGFloat = 3.5
+    static let defaultCameraScale: CGFloat = 1.0
 
     // Number glow colors (RGB)
     static let numberColors: [(CGFloat, CGFloat, CGFloat)] = [
