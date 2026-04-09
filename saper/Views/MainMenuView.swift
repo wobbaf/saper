@@ -193,7 +193,9 @@ struct MainMenuView: View {
             }
         }
         .alert("Resume Game?", isPresented: $showResumeAlert, presenting: pendingMode) { mode in
-            Button("Resume") { gameState.resumeFromSave() }
+            Button("Resume") {
+                if !gameState.resumeFromSave() { gameState.startGame(mode: mode) }
+            }
             Button("New Game", role: .destructive) { gameState.resetBoard(mode: mode) }
             Button("Cancel", role: .cancel) { pendingMode = nil }
         } message: { mode in
