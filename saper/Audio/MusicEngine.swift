@@ -42,6 +42,7 @@ final class MusicEngine {
     // MARK: - Public control (main thread)
 
     func start() {
+        guard isEnabled else { return }
         fadeTarget = 1.0
         padTarget  = 0.16
         pendingReset = true
@@ -53,11 +54,13 @@ final class MusicEngine {
     }
 
     func pause() {
+        guard isEnabled else { return }
         fadeTarget = 0.12   // dim but audible under pause overlay
         padTarget  = 0.06
     }
 
     func resume() {
+        guard isEnabled else { return }
         fadeTarget = 1.0
         padTarget  = 0.16
     }
