@@ -8,6 +8,7 @@ struct MainMenuView: View {
     @State private var showSettings = false
     @State private var showSkinPicker = false
     @State private var showLeaderboard = false
+    @State private var showShop = false
     @State private var animateTitle = false
     @State private var pendingMode: GameMode? = nil
     @State private var showResumeAlert = false
@@ -174,6 +175,16 @@ struct MainMenuView: View {
                         }
                         .foregroundColor(isDark ? .white.opacity(0.6) : .secondary)
                     }
+
+                    Button(action: { showShop = true }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: "bag.fill")
+                                .font(.system(size: 22))
+                            Text("Shop")
+                                .font(.system(size: 10))
+                        }
+                        .foregroundColor(isDark ? .cyan.opacity(0.8) : .cyan)
+                    }
                 }
                 .padding(.bottom, 30)
             }
@@ -186,6 +197,9 @@ struct MainMenuView: View {
         }
         .sheet(isPresented: $showLeaderboard) {
             LeaderboardView()
+        }
+        .sheet(isPresented: $showShop) {
+            ShopView(gameState: gameState)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {

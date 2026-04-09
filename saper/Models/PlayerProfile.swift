@@ -25,21 +25,12 @@ struct PlayerProfile: Codable {
     var xpProgress: Double { Double(xp) / Double(xpForNextLevel) }
 
     /// Add XP and return true if leveled up.
+    /// The caller is responsible for offering a perk pick on level up.
     mutating func addXP(_ amount: Int) -> Bool {
         xp += amount
         if xp >= xpForNextLevel {
             xp -= xpForNextLevel
             level += 1
-            gems += Constants.gemsPerLevelUp
-            // Grant 1 random booster
-            let roll = Int.random(in: 0...2)
-            if roll == 0 {
-                revealOneCount = min(revealOneCount + 1, Constants.maxBoostersPerType)
-            } else if roll == 1 {
-                solveSectorCount = min(solveSectorCount + 1, Constants.maxBoostersPerType)
-            } else {
-                undoMineCount = min(undoMineCount + 1, Constants.maxBoostersPerType)
-            }
             return true
         }
         return false

@@ -7,6 +7,7 @@ struct GameContainerView: View {
     @State private var scene: GameScene?
     @State private var sceneID = UUID()
     @State private var showResetConfirmation = false
+    @State private var showShop = false
 
     var body: some View {
         ZStack {
@@ -30,6 +31,8 @@ struct GameContainerView: View {
                     gameState.resumeGame()
                 } onRestart: {
                     showResetConfirmation = true
+                } onShop: {
+                    showShop = true
                 } onMainMenu: {
                     gameState.recordLeaderboardEntry()
                     if gameState.gameMode == .endless || gameState.gameMode == .hardcore {
@@ -53,11 +56,17 @@ struct GameContainerView: View {
                 }
             }
 
-            if gameState.showLevelUp {
-                LevelUpView(level: gameState.profile.level) {
-                    gameState.showLevelUp = false
+            if !gameState.pendingPerkOffer.isEmpty {
+                PerkPickerView(
+                    perks: gameState.pendingPerkOffer,
+                    level: gameState.profile.level
+                ) { perk in
+                    gameState.applyPerk(perk)
                 }
             }
+        }
+        .sheet(isPresented: $showShop) {
+            ShopView(gameState: gameState)
         }
         .onAppear {
             createScene()
