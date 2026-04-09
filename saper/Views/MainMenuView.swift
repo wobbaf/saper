@@ -61,6 +61,40 @@ struct MainMenuView: View {
 
                 // Game mode buttons
                 VStack(spacing: 16) {
+                    // Classic mode (first)
+                    Button(action: onClassicMode) {
+                        HStack {
+                            Image(systemName: "square.grid.3x3.topleft.filled")
+                                .font(.system(size: 20))
+                                .frame(width: 30)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Classic")
+                                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                                Text("Windows-style Minesweeper")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14))
+                                .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.5))
+                        }
+                        .foregroundColor(isDark ? .white : .primary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    }
+
                     ForEach(GameMode.allCases, id: \.self) { mode in
                         Button(action: { startGame(mode: mode) }) {
                             HStack {
@@ -95,48 +129,6 @@ struct MainMenuView: View {
                             )
                         }
                     }
-                }
-                .padding(.horizontal, 30)
-
-                // Divider
-                Rectangle()
-                    .fill(isDark ? Color.white.opacity(0.15) : Color.black.opacity(0.1))
-                    .frame(height: 1)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 12)
-
-                // Classic mode button
-                Button(action: onClassicMode) {
-                    HStack {
-                        Image(systemName: "square.grid.3x3.topleft.filled")
-                            .font(.system(size: 20))
-                            .frame(width: 30)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Classic")
-                                .font(.system(size: 18, weight: .bold, design: .monospaced))
-                            Text("Windows-style Minesweeper")
-                                .font(.system(size: 11))
-                                .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.5))
-                    }
-                    .foregroundColor(isDark ? .white : .primary)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                    )
                 }
                 .padding(.horizontal, 30)
 
