@@ -85,4 +85,11 @@ struct GamePersistence {
     static func hasSave() -> Bool {
         FileManager.default.fileExists(atPath: saveURL.path)
     }
+
+    /// Returns the game mode of the saved game without loading the full board.
+    static func savedGameMode() -> GameMode? {
+        guard let data = try? Data(contentsOf: saveURL) else { return nil }
+        struct ModePeek: Decodable { let gameMode: GameMode }
+        return (try? JSONDecoder().decode(ModePeek.self, from: data))?.gameMode
+    }
 }

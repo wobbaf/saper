@@ -8,8 +8,9 @@ struct MainMenuView: View {
     @State private var showSettings = false
     @State private var showSkinPicker = false
     @State private var showLeaderboard = false
-    @State private var selectedMode: GameMode = .endless
     @State private var animateTitle = false
+    @State private var pendingMode: GameMode? = nil
+    @State private var showResumeAlert = false
 
     private var isDark: Bool { colorScheme == .dark }
 
@@ -191,14 +192,23 @@ struct MainMenuView: View {
                 animateTitle = true
             }
         }
+        .alert("Resume Game?", isPresented: $showResumeAlert, presenting: pendingMode) { mode in
+            Button("Resume") { gameState.resumeFromSave() }
+            Button("New Game", role: .destructive) { gameState.resetBoard(mode: mode) }
+            Button("Cancel", role: .cancel) { pendingMode = nil }
+        } message: { mode in
+            Text("You have a saved \(mode.displayName) game in progress.")
+        }
     }
 
     private func startGame(mode: GameMode) {
-        // For endless mode, try to resume a saved game first
-        if mode == .endless && gameState.resumeFromSave() {
-            return
+        if (mode == .endless || mode == .hardcore),
+           GamePersistence.savedGameMode() == mode {
+            pendingMode = mode
+            showResumeAlert = true
+        } else {
+            gameState.startGame(mode: mode)
         }
-        gameState.startGame(mode: mode)
     }
 
     private func iconForMode(_ mode: GameMode) -> String {

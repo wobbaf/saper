@@ -6,6 +6,7 @@ struct GameContainerView: View {
     @ObservedObject var gameState: GameState
     @State private var scene: GameScene?
     @State private var sceneID = UUID()
+    @State private var showResetConfirmation = false
 
     var body: some View {
         ZStack {
@@ -28,10 +29,18 @@ struct GameContainerView: View {
                 PauseMenuView(gameState: gameState) {
                     gameState.resumeGame()
                 } onRestart: {
-                    restartGame()
+                    showResetConfirmation = true
                 } onMainMenu: {
                     gameState.recordLeaderboardEntry()
-                    GamePersistence.clearSave()
+                    if gameState.gameMode == .endless || gameState.gameMode == .hardcore {
+                        GamePersistence.saveBoard(
+                            boardManager: gameState.boardManager,
+                            gameMode: gameState.gameMode,
+                            sectorsSolved: gameState.sectorsSolvedThisSession,
+                            tilesRevealed: gameState.tilesRevealedThisSession,
+                            gemsCollected: gameState.gemsCollectedThisSession
+                        )
+                    }
                     gameState.isPlaying = false
                 }
             }
@@ -52,6 +61,12 @@ struct GameContainerView: View {
         }
         .onAppear {
             createScene()
+        }
+        .alert("Start New Game?", isPresented: $showResetConfirmation) {
+            Button("New Game", role: .destructive) { restartGame() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your current progress will be lost.")
         }
         .statusBarHidden()
     }

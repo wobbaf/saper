@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
+    @State private var showResetSaveConfirmation = false
 
     var body: some View {
         NavigationView {
@@ -90,12 +91,27 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                if GamePersistence.hasSave() {
+                    Section("Game") {
+                        Button(role: .destructive) {
+                            showResetSaveConfirmation = true
+                        } label: {
+                            Label("Reset Saved Game", systemImage: "trash")
+                        }
+                    }
+                }
             }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .alert("Reset Saved Game?", isPresented: $showResetSaveConfirmation) {
+                Button("Reset", role: .destructive) { GamePersistence.clearSave() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your saved board will be permanently deleted.")
             }
         }
     }
