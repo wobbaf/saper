@@ -24,7 +24,7 @@ class GameScene: SKScene {
     // MARK: - Scene Lifecycle
 
     override func didMove(to view: SKView) {
-        backgroundColor = gameState.profile.currentSkin.backgroundColor
+        backgroundColor = backgroundColorForTier(gameState.difficultyTier, skin: gameState.profile.currentSkin)
 
         // Camera — start centered on middle of sector (0,0)
         let startX = Constants.sectorPixelSize / 2
@@ -248,6 +248,50 @@ class GameScene: SKScene {
         }
 
         gameState.onGemCollected = { _ in }
+
+        gameState.onDifficultyTierChanged = { [weak self] tier in
+            self?.animateBackgroundToTier(tier)
+        }
+    }
+
+    // MARK: - Difficulty Background
+
+    /// Background colours for each difficulty tier — deep blue → purple → crimson.
+    private func backgroundColorForTier(_ tier: Int, skin: SkinType) -> SKColor {
+        switch skin {
+        case .space:
+            // r rises (blue → red), b falls
+            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
+            let r = 0.02 + t * 0.20
+            let g = 0.02 - t * 0.01
+            let b = 0.08 - t * 0.06
+            return SKColor(red: r, green: max(g, 0.01), blue: max(b, 0.02), alpha: 1)
+        case .neonGrid:
+            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
+            let r = t * 0.12
+            return SKColor(red: r, green: 0.0, blue: max(0.00, 0.02 - t * 0.02), alpha: 1)
+        }
+    }
+
+    private func animateBackgroundToTier(_ tier: Int) {
+        let target = backgroundColorForTier(tier, skin: gameState.profile.currentSkin)
+        let start = backgroundColor
+        var startR: CGFloat = 0, startG: CGFloat = 0, startB: CGFloat = 0, startA: CGFloat = 0
+        var endR: CGFloat = 0, endG: CGFloat = 0, endB: CGFloat = 0, endA: CGFloat = 0
+        start.getRed(&startR, green: &startG, blue: &startB, alpha: &startA)
+        target.getRed(&endR, green: &endG, blue: &endB, alpha: &endA)
+
+        let duration: CGFloat = 2.5
+        let fade = SKAction.customAction(withDuration: Double(duration)) { [weak self] _, t in
+            let p = min(t / duration, 1.0)
+            self?.backgroundColor = SKColor(
+                red:   startR + (endR - startR) * p,
+                green: startG + (endG - startG) * p,
+                blue:  startB + (endB - startB) * p,
+                alpha: 1
+            )
+        }
+        run(fade)
     }
 
     private func handleTilesRevealed(_ positions: [FloodFill.TilePosition]) {

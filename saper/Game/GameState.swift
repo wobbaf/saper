@@ -15,6 +15,8 @@ class GameState: ObservableObject {
     @Published var isPlaying: Bool = false
     /// The sector currently centered in the camera — updated by GameScene.
     var focusedSector: SectorCoordinate = SectorCoordinate(x: 0, y: 0)
+    /// Current difficulty tier (0 = base). Increments every sectorsPerDifficultyTier sectors solved.
+    @Published var difficultyTier: Int = 0
 
     // Per-run state — reset at the start of every run
     @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
@@ -31,6 +33,7 @@ class GameState: ObservableObject {
     var onMineHit: ((SectorCoordinate) -> Void)?
     var onSectorSolved: ((SectorCoordinate) -> Void)?
     var onSectorReset: ((SectorCoordinate) -> Void)?
+    var onDifficultyTierChanged: ((Int) -> Void)?
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -275,6 +278,15 @@ class GameState: ObservableObject {
         MusicEngine.shared.triggerSectorSolved()
         MusicEngine.shared.sectorsCompleted = sectorsSolvedThisSession
 
+        // Difficulty tier bump
+        let newTier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
+                         Constants.maxDifficultyTier)
+        if newTier > difficultyTier {
+            difficultyTier = newTier
+            boardManager.difficultyBonus = Double(newTier) * Constants.densityBonusPerTier
+            onDifficultyTierChanged?(newTier)
+        }
+
         let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier)
         let leveledUp = profile.addXP(xpGained)
         if leveledUp && pendingPerkOffer.isEmpty {
@@ -333,6 +345,8 @@ class GameState: ObservableObject {
         // Per-run state reset
         profile.xp = 0
         profile.level = 1
+        difficultyTier = 0
+        boardManager.difficultyBonus = 0.0
 
         // Per-run boosters initialised from profile base stock
         runBoosters = [
@@ -386,6 +400,12 @@ class GameState: ObservableObject {
         runPerks = saveData.runPerks ?? [:]
         pendingPerkOffer = []
         isPlaying = true
+
+        // Restore difficulty tier from saved sector count
+        let tier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
+                      Constants.maxDifficultyTier)
+        difficultyTier = tier
+        boardManager.difficultyBonus = Double(tier) * Constants.densityBonusPerTier
 
         syncAudioHaptics()
         MusicEngine.shared.start()
