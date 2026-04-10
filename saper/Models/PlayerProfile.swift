@@ -27,6 +27,7 @@ struct PlayerProfile: Codable {
     var prospectorLevel: Int = 0      // 0–3: +1 gem from gem sectors per level
     var densityShieldLevel: Int = 0   // 0–3: −3% mine density per level
     var extraChoiceUnlocked: Bool = false  // perk offers show 4 options
+    var extraHeartsLevel: Int = 0     // 0–2: +1 max heart in endless per level
 
     func prestigeLevel(for upgrade: PrestigeUpgrade) -> Int {
         switch upgrade {
@@ -35,6 +36,7 @@ struct PlayerProfile: Codable {
         case .prospector:    return prospectorLevel
         case .densityShield: return densityShieldLevel
         case .extraChoice:   return extraChoiceUnlocked ? 1 : 0
+        case .extraHearts:   return extraHeartsLevel
         }
     }
 
@@ -45,6 +47,7 @@ struct PlayerProfile: Codable {
         case .prospector:    prospectorLevel += 1
         case .densityShield: densityShieldLevel += 1
         case .extraChoice:   extraChoiceUnlocked = true
+        case .extraHearts:   extraHeartsLevel += 1
         }
     }
 

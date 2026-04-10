@@ -21,6 +21,7 @@ class GameState: ObservableObject {
     // Per-run state — reset at the start of every run
     @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
     @Published var runPerks: [String: Int] = [:]     // RunPerk.rawValue → stacks
+    @Published var livesRemaining: Int = 3           // Endless mode only
 
     let boardManager: BoardManager
     let timerManager = TimerManager()
@@ -49,6 +50,8 @@ class GameState: ObservableObject {
     func perkStacks(_ perk: RunPerk) -> Int { runPerks[perk.rawValue] ?? 0 }
     func hasPerk(_ perk: RunPerk) -> Bool { perkStacks(perk) > 0 }
 
+    var maxLives: Int { 3 + profile.extraHeartsLevel }
+
     var xpMultiplier: Double {
         let runBonus = hasPerk(.xpRush) ? 1.5 : 1.0
         let prestigeBonus = 1.0 + Double(profile.scholarLevel) * 0.25
@@ -64,6 +67,8 @@ class GameState: ObservableObject {
             runBoosters[BoosterType.solveSector.rawValue, default: 0] += 1
         case .undoMineBooster:
             runBoosters[BoosterType.undoMine.rawValue, default: 0] += 1
+        case .refillHeart:
+            livesRemaining = min(livesRemaining + 1, maxLives)
         default:
             runPerks[perk.rawValue, default: 0] += 1
         }
@@ -95,7 +100,7 @@ class GameState: ObservableObject {
             tilesRevealedThisSession += revealed.count
             let leveledUp = profile.addXP(xpGained)
             if leveledUp && pendingPerkOffer.isEmpty {
-                pendingPerkOffer = RunPerk.generateOffer()
+                pendingPerkOffer = RunPerk.generateOffer(gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
                 AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
                 HapticsManager.shared.play(.levelUp)
                 MusicEngine.shared.triggerLevelUp()
@@ -139,6 +144,12 @@ class GameState: ObservableObject {
                 if shields > 0 {
                     runPerks[RunPerk.mineShield.rawValue] = shields - 1
                 } else {
+                    isGameOver = true
+                }
+            } else if gameMode == .endless {
+                livesRemaining -= 1
+                if livesRemaining <= 0 {
+                    livesRemaining = 0
                     isGameOver = true
                 }
             }
@@ -189,7 +200,7 @@ class GameState: ObservableObject {
                 tilesRevealedThisSession += revealed.count
                 let leveledUp = profile.addXP(xpGained)
                 if leveledUp && pendingPerkOffer.isEmpty {
-                    pendingPerkOffer = RunPerk.generateOffer()
+                    pendingPerkOffer = RunPerk.generateOffer(gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
                     AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
                     HapticsManager.shared.play(.levelUp)
                 }
@@ -295,7 +306,7 @@ class GameState: ObservableObject {
         let leveledUp = profile.addXP(xpGained)
         if leveledUp && pendingPerkOffer.isEmpty {
             let offerCount = profile.extraChoiceUnlocked ? 4 : 3
-            pendingPerkOffer = RunPerk.generateOffer(count: offerCount)
+            pendingPerkOffer = RunPerk.generateOffer(count: offerCount, gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
             AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
             HapticsManager.shared.play(.levelUp)
             MusicEngine.shared.triggerLevelUp()
@@ -361,6 +372,7 @@ class GameState: ObservableObject {
             BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
         ]
         runPerks = [:]
+        livesRemaining = maxLives
         focusedSector = SectorCoordinate(x: 0, y: 0)
 
         // Apply density shield prestige

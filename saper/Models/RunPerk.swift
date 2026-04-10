@@ -9,6 +9,7 @@ enum RunPerk: String, Codable, CaseIterable {
     case gemMagnet
     case sectorDiscount
     case xpRush
+    case refillHeart
 
     var displayName: String {
         switch self {
@@ -19,6 +20,7 @@ enum RunPerk: String, Codable, CaseIterable {
         case .gemMagnet:        return "Gem Magnet"
         case .sectorDiscount:   return "Discount"
         case .xpRush:           return "XP Rush"
+        case .refillHeart:      return "Refill Heart"
         }
     }
 
@@ -31,6 +33,7 @@ enum RunPerk: String, Codable, CaseIterable {
         case .gemMagnet:        return "+1 gem every time you solve a sector. Stackable."
         case .sectorDiscount:   return "Unlock locked sectors for 3 gems instead of 5."
         case .xpRush:           return "Gain 50% more XP for the rest of this run."
+        case .refillHeart:      return "Restore 1 lost heart. Endless mode only."
         }
     }
 
@@ -43,6 +46,7 @@ enum RunPerk: String, Codable, CaseIterable {
         case .gemMagnet:        return "diamond.fill"
         case .sectorDiscount:   return "tag.fill"
         case .xpRush:           return "bolt.fill"
+        case .refillHeart:      return "heart.fill"
         }
     }
 
@@ -55,11 +59,20 @@ enum RunPerk: String, Codable, CaseIterable {
         case .gemMagnet:        return .cyan
         case .sectorDiscount:   return .green
         case .xpRush:           return Color(red: 1, green: 0.85, blue: 0)
+        case .refillHeart:      return .pink
         }
     }
 
     /// Returns `count` unique random perks for an offer screen.
-    static func generateOffer(count: Int = 3) -> [RunPerk] {
-        Array(allCases.shuffled().prefix(count))
+    /// In endless mode, refillHeart is included only when lives are below max.
+    static func generateOffer(count: Int = 3, gameMode: GameMode = .endless, livesRemaining: Int = 3, maxLives: Int = 3) -> [RunPerk] {
+        var pool = allCases.filter { perk in
+            if perk == .refillHeart {
+                return gameMode == .endless && livesRemaining < maxLives
+            }
+            return true
+        }
+        pool.shuffle()
+        return Array(pool.prefix(count))
     }
 }

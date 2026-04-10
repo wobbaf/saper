@@ -89,6 +89,14 @@ struct HUDOverlayView: View {
 
             statItem(icon: "checkmark.seal.fill", value: "\(gameState.sectorsSolvedThisSession)", color: .green)
 
+            if gameState.gameMode == .endless {
+                statItem(
+                    icon: "heart.fill",
+                    value: "\(gameState.livesRemaining)",
+                    color: gameState.livesRemaining <= 1 ? .red : .pink
+                )
+            }
+
             if gameState.gameMode == .timed {
                 statItem(
                     icon: "timer",
