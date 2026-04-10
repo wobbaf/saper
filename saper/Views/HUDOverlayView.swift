@@ -190,11 +190,12 @@ struct HUDOverlayView: View {
 
     private func useUndoMine() {
         // Find the nearest locked sector
+        let center = gameState.focusedSector
         for radius in 0...5 {
             for dx in -radius...radius {
                 for dy in -radius...radius {
                     if abs(dx) != radius && abs(dy) != radius { continue }
-                    let coord = SectorCoordinate(x: dx, y: dy)
+                    let coord = SectorCoordinate(x: center.x + dx, y: center.y + dy)
                     if let sector = gameState.boardManager.sector(at: coord),
                        sector.status == .locked {
                         gameState.useUndoMine(sectorCoord: coord)
