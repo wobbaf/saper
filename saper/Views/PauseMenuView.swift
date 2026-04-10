@@ -5,6 +5,7 @@ struct PauseMenuView: View {
     @ObservedObject var gameState: GameState
     let onResume: () -> Void
     let onRestart: () -> Void
+    let onShop: () -> Void
     let onMainMenu: () -> Void
 
     var body: some View {
@@ -30,6 +31,7 @@ struct PauseMenuView: View {
 
                 VStack(spacing: 12) {
                     MenuButton(title: "Resume", icon: "play.fill", color: .green, action: onResume)
+                    MenuButton(title: "Shop", icon: "bag.fill", color: .cyan, action: onShop)
                     MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: .orange, action: onRestart)
                     MenuButton(title: "Main Menu", icon: "house.fill", color: .gray, action: onMainMenu)
                 }

@@ -43,7 +43,9 @@ struct saperApp: App {
                 gameMode: gameState.gameMode,
                 sectorsSolved: gameState.sectorsSolvedThisSession,
                 tilesRevealed: gameState.tilesRevealedThisSession,
-                gemsCollected: gameState.gemsCollectedThisSession
+                gemsCollected: gameState.gemsCollectedThisSession,
+                runBoosters: gameState.runBoosters,
+                runPerks: gameState.runPerks
             )
         }
     }

@@ -206,7 +206,7 @@ struct GameActions {
         sectorCoord: SectorCoordinate,
         gameState: GameState
     ) -> FloodFill.TilePosition? {
-        guard gameState.profile.revealOneCount > 0 else { return nil }
+        guard gameState.revealOneAvailable > 0 else { return nil }
         guard let sector = gameState.boardManager.sector(at: sectorCoord),
               sector.status == .active else { return nil }
 
@@ -227,7 +227,7 @@ struct GameActions {
         let gy = sectorCoord.originTileY + row
 
         _ = revealTile(globalX: gx, globalY: gy, gameState: gameState)
-        gameState.profile.revealOneCount -= 1
+        gameState.runBoosters[BoosterType.revealOne.rawValue, default: 0] -= 1
 
         return FloodFill.TilePosition(globalX: gx, globalY: gy)
     }
@@ -237,7 +237,7 @@ struct GameActions {
         sectorCoord: SectorCoordinate,
         gameState: GameState
     ) -> [FloodFill.TilePosition] {
-        guard gameState.profile.solveSectorCount > 0 else { return [] }
+        guard gameState.solveSectorAvailable > 0 else { return [] }
         guard let sector = gameState.boardManager.sector(at: sectorCoord),
               sector.status == .active else { return [] }
 
@@ -266,7 +266,7 @@ struct GameActions {
         }
 
         sector.isModified = true
-        gameState.profile.solveSectorCount -= 1
+        gameState.runBoosters[BoosterType.solveSector.rawValue, default: 0] -= 1
 
         return revealed
     }
@@ -276,11 +276,12 @@ struct GameActions {
         sectorCoord: SectorCoordinate,
         gameState: GameState
     ) -> Bool {
-        guard gameState.profile.gems >= Constants.sectorUnlockCost else { return false }
+        let cost = gameState.sectorUnlockCost
+        guard gameState.profile.gems >= cost else { return false }
         guard let sector = gameState.boardManager.sector(at: sectorCoord),
               sector.status == .locked else { return false }
 
-        gameState.profile.gems -= Constants.sectorUnlockCost
+        gameState.profile.gems -= cost
         sector.status = .active
 
         // Reset the mine tile back to hidden
@@ -300,11 +301,11 @@ struct GameActions {
         sectorCoord: SectorCoordinate,
         gameState: GameState
     ) -> Bool {
-        guard gameState.profile.undoMineCount > 0 else { return false }
+        guard gameState.undoMineAvailable > 0 else { return false }
         guard let sector = gameState.boardManager.sector(at: sectorCoord),
               sector.status == .locked else { return false }
 
-        gameState.profile.undoMineCount -= 1
+        gameState.runBoosters[BoosterType.undoMine.rawValue, default: 0] -= 1
         sector.status = .active
 
         // Reset all mine-state tiles back to hidden

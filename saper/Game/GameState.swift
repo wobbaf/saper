@@ -8,11 +8,15 @@ class GameState: ObservableObject {
     @Published var gameMode: GameMode = .endless
     @Published var isPaused: Bool = false
     @Published var isGameOver: Bool = false
-    @Published var showLevelUp: Bool = false
+    @Published var pendingPerkOffer: [RunPerk] = []
     @Published var sectorsSolvedThisSession: Int = 0
     @Published var tilesRevealedThisSession: Int = 0
     @Published var gemsCollectedThisSession: Int = 0
     @Published var isPlaying: Bool = false
+
+    // Per-run state — reset at the start of every run
+    @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
+    @Published var runPerks: [String: Int] = [:]     // RunPerk.rawValue → stacks
 
     let boardManager: BoardManager
     let timerManager = TimerManager()
@@ -29,6 +33,33 @@ class GameState: ObservableObject {
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
         self.boardManager = BoardManager(globalSeed: seed)
+    }
+
+    // MARK: - Run perk helpers
+
+    var revealOneAvailable: Int { runBoosters[BoosterType.revealOne.rawValue] ?? 0 }
+    var solveSectorAvailable: Int { runBoosters[BoosterType.solveSector.rawValue] ?? 0 }
+    var undoMineAvailable: Int { runBoosters[BoosterType.undoMine.rawValue] ?? 0 }
+
+    func perkStacks(_ perk: RunPerk) -> Int { runPerks[perk.rawValue] ?? 0 }
+    func hasPerk(_ perk: RunPerk) -> Bool { perkStacks(perk) > 0 }
+
+    var xpMultiplier: Double { hasPerk(.xpRush) ? 1.5 : 1.0 }
+    var sectorUnlockCost: Int { hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost }
+
+    func applyPerk(_ perk: RunPerk) {
+        switch perk {
+        case .revealOneBooster:
+            runBoosters[BoosterType.revealOne.rawValue, default: 0] += 1
+        case .solveSectorBooster:
+            runBoosters[BoosterType.solveSector.rawValue, default: 0] += 1
+        case .undoMineBooster:
+            runBoosters[BoosterType.undoMine.rawValue, default: 0] += 1
+        default:
+            runPerks[perk.rawValue, default: 0] += 1
+        }
+        pendingPerkOffer = []
+        objectWillChange.send()
     }
 
     // MARK: - Game Actions
@@ -51,11 +82,11 @@ class GameState: ObservableObject {
 
         switch result {
         case .safe(let revealed):
-            let xpGained = revealed.count * Constants.xpPerTileReveal
+            let xpGained = Int(Double(revealed.count * Constants.xpPerTileReveal) * xpMultiplier)
             tilesRevealedThisSession += revealed.count
             let leveledUp = profile.addXP(xpGained)
-            if leveledUp {
-                showLevelUp = true
+            if leveledUp && pendingPerkOffer.isEmpty {
+                pendingPerkOffer = RunPerk.generateOffer()
                 AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
                 HapticsManager.shared.play(.levelUp)
             }
@@ -93,7 +124,12 @@ class GameState: ObservableObject {
             onSectorStatusChanged?(coord, .locked)
 
             if gameMode == .hardcore {
-                isGameOver = true
+                let shields = perkStacks(.mineShield)
+                if shields > 0 {
+                    runPerks[RunPerk.mineShield.rawValue] = shields - 1
+                } else {
+                    isGameOver = true
+                }
             }
 
         case .alreadyRevealed:
@@ -138,10 +174,14 @@ class GameState: ObservableObject {
             if !revealed.isEmpty {
                 AudioManager.shared.play(.chordReveal)
                 HapticsManager.shared.play(.chordReveal)
-                let xpGained = revealed.count * Constants.xpPerTileReveal
+                let xpGained = Int(Double(revealed.count * Constants.xpPerTileReveal) * xpMultiplier)
                 tilesRevealedThisSession += revealed.count
                 let leveledUp = profile.addXP(xpGained)
-                if leveledUp { showLevelUp = true }
+                if leveledUp && pendingPerkOffer.isEmpty {
+                    pendingPerkOffer = RunPerk.generateOffer()
+                    AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
+                    HapticsManager.shared.play(.levelUp)
+                }
                 onTilesRevealed?(revealed)
 
                 var checkedSectors: Set<SectorCoordinate> = []
@@ -158,7 +198,14 @@ class GameState: ObservableObject {
         case .mine(let coord):
             onMineHit?(coord)
             onSectorStatusChanged?(coord, .locked)
-            if gameMode == .hardcore { isGameOver = true }
+            if gameMode == .hardcore {
+                let shields = perkStacks(.mineShield)
+                if shields > 0 {
+                    runPerks[RunPerk.mineShield.rawValue] = shields - 1
+                } else {
+                    isGameOver = true
+                }
+            }
 
         default:
             break
@@ -222,23 +269,31 @@ class GameState: ObservableObject {
         AudioManager.shared.playCompound(SoundEffect.sectorSolvedChord)
         HapticsManager.shared.play(.sectorSolved)
 
-        let leveledUp = profile.addXP(Constants.xpPerSectorSolve)
-        if leveledUp {
-            showLevelUp = true
+        let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier)
+        let leveledUp = profile.addXP(xpGained)
+        if leveledUp && pendingPerkOffer.isEmpty {
+            pendingPerkOffer = RunPerk.generateOffer()
             AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
             HapticsManager.shared.play(.levelUp)
         }
 
-        // Collect gems
+        // Collect gems (base + gem magnet bonus)
         if let sector = boardManager.sector(at: coord),
            sector.gemReward > 0 && !sector.gemCollected {
             sector.gemCollected = true
-            profile.gems += sector.gemReward
-            gemsCollectedThisSession += sector.gemReward
-            let _ = profile.addXP(sector.gemReward * Constants.xpPerGemFind)
+            let totalGems = sector.gemReward + perkStacks(.gemMagnet)
+            profile.gems += totalGems
+            gemsCollectedThisSession += totalGems
+            let _ = profile.addXP(Int(Double(sector.gemReward * Constants.xpPerGemFind) * xpMultiplier))
             AudioManager.shared.playCompound(SoundEffect.gemChime)
             HapticsManager.shared.play(.gemCollected)
-            onGemCollected?(sector.gemReward)
+            onGemCollected?(totalGems)
+        } else if perkStacks(.gemMagnet) > 0 {
+            // Gem magnet still fires even for sectors without a gem reward
+            let bonus = perkStacks(.gemMagnet)
+            profile.gems += bonus
+            gemsCollectedThisSession += bonus
+            onGemCollected?(bonus)
         }
 
         // Update high scores
@@ -266,8 +321,17 @@ class GameState: ObservableObject {
         tilesRevealedThisSession = 0
         gemsCollectedThisSession = 0
         isPlaying = true
-        boardManager.reset()
+        pendingPerkOffer = []
 
+        // Per-run boosters initialised from profile base stock
+        runBoosters = [
+            BoosterType.revealOne.rawValue:   profile.revealOneCount,
+            BoosterType.solveSector.rawValue: profile.solveSectorCount,
+            BoosterType.undoMine.rawValue:    profile.undoMineCount
+        ]
+        runPerks = [:]
+
+        boardManager.reset()
         syncAudioHaptics()
         MusicEngine.shared.start()
 
@@ -281,6 +345,7 @@ class GameState: ObservableObject {
         GamePersistence.clearSave()
         startGame(mode: mode)
     }
+
 
     /// Resumes an endless or hardcore game from a saved board state.
     /// Returns true if a matching save was found and restored.
@@ -300,6 +365,13 @@ class GameState: ObservableObject {
         sectorsSolvedThisSession = saveData.sectorsSolved
         tilesRevealedThisSession = saveData.tilesRevealed
         gemsCollectedThisSession = saveData.gemsCollected
+        runBoosters = saveData.runBoosters ?? [
+            BoosterType.revealOne.rawValue:   profile.revealOneCount,
+            BoosterType.solveSector.rawValue: profile.solveSectorCount,
+            BoosterType.undoMine.rawValue:    profile.undoMineCount
+        ]
+        runPerks = saveData.runPerks ?? [:]
+        pendingPerkOffer = []
         isPlaying = true
 
         syncAudioHaptics()

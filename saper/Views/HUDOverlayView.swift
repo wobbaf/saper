@@ -28,7 +28,7 @@ struct HUDOverlayView: View {
                     HStack(spacing: 2) {
                         Image(systemName: "eye.fill")
                             .font(.system(size: 12))
-                        Text("\(gameState.profile.revealOneCount)")
+                        Text("\(gameState.revealOneAvailable)")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                     }
                     .foregroundColor(.yellow)
@@ -37,13 +37,13 @@ struct HUDOverlayView: View {
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(8)
                 }
-                .disabled(gameState.profile.revealOneCount <= 0)
+                .disabled(gameState.revealOneAvailable <= 0)
 
                 Button(action: useSolveSector) {
                     HStack(spacing: 2) {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 12))
-                        Text("\(gameState.profile.solveSectorCount)")
+                        Text("\(gameState.solveSectorAvailable)")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                     }
                     .foregroundColor(.purple)
@@ -52,13 +52,13 @@ struct HUDOverlayView: View {
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(8)
                 }
-                .disabled(gameState.profile.solveSectorCount <= 0)
+                .disabled(gameState.solveSectorAvailable <= 0)
 
                 Button(action: useUndoMine) {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.uturn.backward")
                             .font(.system(size: 12))
-                        Text("\(gameState.profile.undoMineCount)")
+                        Text("\(gameState.undoMineAvailable)")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                     }
                     .foregroundColor(.orange)
@@ -67,7 +67,7 @@ struct HUDOverlayView: View {
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(8)
                 }
-                .disabled(gameState.profile.undoMineCount <= 0)
+                .disabled(gameState.undoMineAvailable <= 0)
 
                 Button(action: { gameState.pauseGame() }) {
                     Image(systemName: "pause.fill")
