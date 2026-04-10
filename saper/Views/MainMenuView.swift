@@ -120,7 +120,7 @@ struct MainMenuView: View {
             SkinPickerView(gameState: gameState)
         }
         .sheet(isPresented: $showLeaderboard) {
-            LeaderboardView()
+            LeaderboardView(gameState: gameState)
         }
         .sheet(isPresented: $showShop) {
             PrestigeShopView(gameState: gameState)

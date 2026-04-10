@@ -17,16 +17,18 @@ private let leaderboardTabs: [LeaderboardTab] = [
 
 /// Local leaderboard view showing scores across all modes.
 struct LeaderboardView: View {
+    @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab: String = "endless"
 
     private var isDark: Bool { colorScheme == .dark }
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         NavigationView {
             ZStack {
-                (isDark ? Color(red: 0.05, green: 0.05, blue: 0.12) : Color(red: 0.94, green: 0.94, blue: 0.97))
+                (isDark ? theme.backgroundColors[0] : Color(red: 0.94, green: 0.94, blue: 0.97))
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -79,7 +81,7 @@ struct LeaderboardView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(isDark ? .cyan : .blue)
+                        .foregroundColor(isDark ? theme.accentColor : .blue)
                 }
             }
         }
@@ -89,13 +91,13 @@ struct LeaderboardView: View {
     private func tabButton(tab: LeaderboardTab) -> some View {
         let isSelected = selectedTab == tab.id
         let fillColor: Color = isSelected
-            ? (isDark ? Color.cyan.opacity(0.25) : Color.blue.opacity(0.15))
+            ? (isDark ? theme.accentColor.opacity(0.25) : Color.blue.opacity(0.15))
             : (isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
         let strokeColor: Color = isSelected
-            ? (isDark ? Color.cyan.opacity(0.5) : Color.blue.opacity(0.3))
+            ? (isDark ? theme.accentColor.opacity(0.5) : Color.blue.opacity(0.3))
             : Color.clear
         let textColor: Color = isSelected
-            ? (isDark ? .cyan : .blue)
+            ? (isDark ? theme.accentColor : .blue)
             : (isDark ? .white.opacity(0.5) : .secondary)
 
         Button(action: { selectedTab = tab.id }) {

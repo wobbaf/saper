@@ -33,8 +33,8 @@ struct PauseMenuView: View {
                 VStack(spacing: 12) {
                     MenuButton(title: "Resume", icon: "play.fill", color: theme.accentColor, action: onResume)
                     MenuButton(title: "Shop", icon: "bag.fill", color: theme.secondaryColor, action: onShop)
-                    MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: .orange, action: onRestart)
-                    MenuButton(title: "Main Menu", icon: "house.fill", color: .gray, action: onMainMenu)
+                    MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: theme.accentColor.opacity(0.7), action: onRestart)
+                    MenuButton(title: "Main Menu", icon: "house.fill", color: .white.opacity(0.4), action: onMainMenu)
                 }
             }
             .padding(30)
