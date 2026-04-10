@@ -7,13 +7,14 @@ struct GameOverView: View {
     let onMainMenu: () -> Void
     @State private var showLeaderboard = false
 
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.85)
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
-                // Title
                 Text(gameState.gameMode == .hardcore ? "GAME OVER" : "TIME'S UP")
                     .font(.system(size: 32, weight: .black, design: .monospaced))
                     .foregroundStyle(
@@ -22,26 +23,22 @@ struct GameOverView: View {
                         : LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing)
                     )
 
-                // Results
                 VStack(spacing: 12) {
-                    ResultRow(icon: "checkmark.seal.fill", label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)", color: .green)
+                    ResultRow(icon: "checkmark.seal.fill", label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)", color: theme.accentColor)
                     ResultRow(icon: "square.grid.3x3.fill", label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)", color: .blue)
-                    ResultRow(icon: "diamond.fill", label: "Gems Collected", value: "\(gameState.gemsCollectedThisSession)", color: .cyan)
+                    ResultRow(icon: "diamond.fill", label: "Gems Collected", value: "\(gameState.gemsCollectedThisSession)", color: theme.accentColor)
 
-                    Divider()
-                        .background(Color.white.opacity(0.2))
+                    Divider().background(Color.white.opacity(0.2))
 
                     ResultRow(icon: "star.fill", label: "XP Gained", value: "\(gameState.tilesRevealedThisSession + gameState.sectorsSolvedThisSession * 50)", color: .yellow)
 
-                    // High score
                     let highScore = currentHighScore()
                     ResultRow(icon: "trophy.fill", label: "Best", value: "\(highScore)", color: .orange)
                 }
                 .padding(20)
-                .background(Color.white.opacity(0.08))
+                .background(theme.cardBackground)
                 .cornerRadius(12)
 
-                // Buttons
                 VStack(spacing: 12) {
                     Button(action: onPlayAgain) {
                         HStack {
@@ -54,7 +51,7 @@ struct GameOverView: View {
                         .padding(.vertical, 16)
                         .background(
                             LinearGradient(
-                                colors: [.cyan.opacity(0.4), .purple.opacity(0.4)],
+                                colors: [theme.accentColor.opacity(0.35), theme.secondaryColor.opacity(0.35)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -62,7 +59,7 @@ struct GameOverView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.cyan.opacity(0.5), lineWidth: 1)
+                                .stroke(theme.accentColor.opacity(0.5), lineWidth: 1)
                         )
                     }
 
@@ -70,7 +67,7 @@ struct GameOverView: View {
                         Button(action: { showLeaderboard = true }) {
                             Text("Scores")
                                 .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                .foregroundColor(.cyan.opacity(0.7))
+                                .foregroundColor(theme.accentColor.opacity(0.8))
                                 .padding(.vertical, 12)
                         }
 
