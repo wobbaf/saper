@@ -89,6 +89,7 @@ class GameState: ObservableObject {
                 pendingPerkOffer = RunPerk.generateOffer()
                 AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
                 HapticsManager.shared.play(.levelUp)
+                MusicEngine.shared.triggerLevelUp()
             }
 
             // Audio/haptic feedback for reveals
@@ -120,6 +121,7 @@ class GameState: ObservableObject {
         case .mine(let coord):
             AudioManager.shared.play(.mineExplosion)
             HapticsManager.shared.play(.mineHit)
+            MusicEngine.shared.triggerMineHit()
             onMineHit?(coord)
             onSectorStatusChanged?(coord, .locked)
 
@@ -268,6 +270,8 @@ class GameState: ObservableObject {
 
         AudioManager.shared.playCompound(SoundEffect.sectorSolvedChord)
         HapticsManager.shared.play(.sectorSolved)
+        MusicEngine.shared.triggerSectorSolved()
+        MusicEngine.shared.sectorsCompleted = sectorsSolvedThisSession
 
         let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier)
         let leveledUp = profile.addXP(xpGained)
@@ -275,6 +279,7 @@ class GameState: ObservableObject {
             pendingPerkOffer = RunPerk.generateOffer()
             AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
             HapticsManager.shared.play(.levelUp)
+            MusicEngine.shared.triggerLevelUp()
         }
 
         // Collect gems (base + gem magnet bonus)
@@ -333,6 +338,7 @@ class GameState: ObservableObject {
 
         boardManager.reset()
         syncAudioHaptics()
+        MusicEngine.shared.sectorsCompleted = 0
         MusicEngine.shared.start()
 
         if mode == .timed {
