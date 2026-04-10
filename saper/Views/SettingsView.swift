@@ -6,10 +6,18 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showResetSaveConfirmation = false
 
-    // Developer mode
+    // Developer mode — only available in Debug and TestFlight builds
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @State private var devTapCount = 0
     @State private var devTapResetTask: Task<Void, Never>? = nil
+
+    private var isDevBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        #endif
+    }
 
     var body: some View {
         NavigationView {
@@ -106,17 +114,27 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Legal") {
+                    Link(destination: URL(string: "https://polar-cylinder-6aa.notion.site/Privacy-policy-2568f5d0356f80579df9fe35977c2792")!) {
+                        Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    }
+                    Link(destination: URL(string: "https://polar-cylinder-6aa.notion.site/Terms-and-conditions-2568f5d0356f80459de9ecaf33c081fe")!) {
+                        Label("Terms of Service", systemImage: "doc.text.fill")
+                    }
+                }
+
                 Section {
                     HStack {
                         Text("Version")
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(devModeEnabled ? "1.0 🔧" : (devTapCount > 0 ? "1.0 (\(devTapCount))" : "1.0"))
+                        Text(isDevBuild && devModeEnabled ? "1.0 🔧" : (isDevBuild && devTapCount > 0 ? "1.0 (\(devTapCount))" : "1.0"))
                             .font(.system(.body, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        guard isDevBuild else { return }
                         devTapResetTask?.cancel()
                         devTapCount += 1
                         if devTapCount >= 7 {
@@ -135,7 +153,7 @@ struct SettingsView: View {
                     }
                 }
 
-                if devModeEnabled {
+                if isDevBuild && devModeEnabled {
                     Section {
                         HStack {
                             Image(systemName: "hammer.fill")
