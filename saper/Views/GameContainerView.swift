@@ -44,7 +44,7 @@ struct GameContainerView: View {
 
             ScanlineOverlayView()
 
-            HUDOverlayView(gameState: gameState)
+            HUDOverlayView(gameState: gameState, onShopTapped: { showShop = true })
 
             if gameState.isPaused {
                 PauseMenuView(gameState: gameState) {
