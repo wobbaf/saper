@@ -106,6 +106,15 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Legal") {
+                    Link(destination: URL(string: "https://polar-cylinder-6aa.notion.site/Privacy-policy-2568f5d0356f80579df9fe35977c2792")!) {
+                        Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    }
+                    Link(destination: URL(string: "https://polar-cylinder-6aa.notion.site/Terms-and-conditions-2568f5d0356f80459de9ecaf33c081fe")!) {
+                        Label("Terms of Service", systemImage: "doc.text.fill")
+                    }
+                }
+
                 Section {
                     HStack {
                         Text("Version")
