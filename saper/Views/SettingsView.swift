@@ -111,22 +111,23 @@ struct SettingsView: View {
                         Text("Version")
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("1.0")
+                        Text(devModeEnabled ? "1.0 🔧" : (devTapCount > 0 ? "1.0 (\(devTapCount))" : "1.0"))
                             .font(.system(.body, design: .monospaced))
                             .foregroundColor(.secondary)
-                            .onTapGesture {
-                                devTapResetTask?.cancel()
-                                devTapCount += 1
-                                if devTapCount >= 7 {
-                                    devTapCount = 0
-                                    devModeEnabled.toggle()
-                                } else {
-                                    devTapResetTask = Task {
-                                        try? await Task.sleep(nanoseconds: 2_000_000_000)
-                                        devTapCount = 0
-                                    }
-                                }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        devTapResetTask?.cancel()
+                        devTapCount += 1
+                        if devTapCount >= 7 {
+                            devTapCount = 0
+                            devModeEnabled.toggle()
+                        } else {
+                            devTapResetTask = Task {
+                                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                                await MainActor.run { devTapCount = 0 }
                             }
+                        }
                     }
                 }
 
