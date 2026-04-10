@@ -37,7 +37,7 @@ struct saperApp: App {
 
     private func saveState() {
         ProfilePersistence.saveProfile(gameState.profile)
-        if gameState.isPlaying {
+        if gameState.isPlaying && !gameState.isGameOver {
             GamePersistence.saveBoard(
                 boardManager: gameState.boardManager,
                 gameMode: gameState.gameMode,
