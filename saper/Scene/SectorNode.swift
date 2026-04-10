@@ -135,6 +135,23 @@ class SectorNode: SKNode {
                 animateSectorFailed(center: center, rect: overlayRect)
             }
 
+        case .inactive:
+            let overlay = SKShapeNode(rect: overlayRect)
+            overlay.fillColor = SKColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.70)
+            overlay.strokeColor = SKColor(red: 0.2, green: 0.4, blue: 0.6, alpha: 0.5)
+            overlay.lineWidth = 1.5
+            overlay.zPosition = 10
+            overlayNode = overlay
+            addChild(overlay)
+
+            // Gem cost label in the center
+            let gemLabel = SKLabelNode(text: "💎")
+            gemLabel.fontSize = 18
+            gemLabel.position = CGPoint(x: center.x, y: center.y - 9)
+            gemLabel.zPosition = 11
+            gemLabel.alpha = 0.55
+            overlay.addChild(gemLabel)
+
         case .active:
             break
         }

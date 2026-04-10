@@ -3,7 +3,7 @@ import Foundation
 class Sector: Codable {
     let coordinate: SectorCoordinate
     var tiles: [[Tile]]
-    var status: SectorStatus = .active
+    var status: SectorStatus = .inactive
     var gemReward: Int = 0
     var gemCollected: Bool = false
     var firstTapDone: Bool = false

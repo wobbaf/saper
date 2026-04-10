@@ -19,7 +19,7 @@ struct GameActions {
         let sectorCoord = SectorCoordinate(fromTileX: globalX, tileY: globalY)
         let sector = gameState.boardManager.ensureSector(at: sectorCoord)
 
-        if sector.status == .locked { return .sectorLocked }
+        if sector.status == .locked || sector.status == .inactive { return .sectorLocked }
 
         let localX = globalX - sectorCoord.originTileX
         let localY = globalY - sectorCoord.originTileY
@@ -186,13 +186,22 @@ struct GameActions {
             sector.status = .solved
             sector.isModified = true
 
-            // Check if any adjacent locked sectors can be auto-unlocked
             for neighbor in coord.neighbors {
-                if let nSector = gameState.boardManager.sector(at: neighbor),
-                   nSector.status == .locked,
+                guard let nSector = gameState.boardManager.sector(at: neighbor) else { continue }
+
+                // Solving a sector unlocks all adjacent inactive sectors for free
+                if nSector.status == .inactive {
+                    nSector.status = .active
+                    nSector.isModified = true
+                    gameState.onSectorStatusChanged?(neighbor, .active)
+                }
+
+                // Mine-hit locked sectors auto-unlock if every one of their neighbours is solved
+                if nSector.status == .locked,
                    gameState.boardManager.allNeighborsSolved(of: neighbor) {
                     nSector.status = .active
                     nSector.isModified = true
+                    gameState.onSectorStatusChanged?(neighbor, .active)
                 }
             }
 
@@ -276,23 +285,28 @@ struct GameActions {
         sectorCoord: SectorCoordinate,
         gameState: GameState
     ) -> Bool {
-        let cost = gameState.sectorUnlockCost
-        guard gameState.profile.gems >= cost else { return false }
-        guard let sector = gameState.boardManager.sector(at: sectorCoord),
-              sector.status == .locked else { return false }
+        guard let sector = gameState.boardManager.sector(at: sectorCoord) else { return false }
+        guard sector.status == .locked || sector.status == .inactive else { return false }
 
+        let cost = gameState.unlockCost(for: sectorCoord)
+        guard gameState.profile.gems >= cost else { return false }
+
+        let wasLocked = sector.status == .locked
         gameState.profile.gems -= cost
         sector.status = .active
+        sector.isModified = true
 
-        // Reset the mine tile back to hidden
-        for row in 0..<Constants.sectorSize {
-            for col in 0..<Constants.sectorSize {
-                if sector.tiles[row][col].state == .mine {
-                    sector.tiles[row][col].state = .hidden
+        if wasLocked {
+            // Mine-hit: reset the revealed mine tile so the player can retry
+            for row in 0..<Constants.sectorSize {
+                for col in 0..<Constants.sectorSize {
+                    if sector.tiles[row][col].state == .mine {
+                        sector.tiles[row][col].state = .hidden
+                    }
                 }
             }
         }
-        sector.isModified = true
+
         return true
     }
 

@@ -59,6 +59,22 @@ class GameState: ObservableObject {
     }
     var sectorUnlockCost: Int { hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost }
 
+    /// Gem cost to unlock a sector. Mine-hit (locked) sectors have a fixed cost;
+    /// inactive sectors scale with BFS distance to the nearest solved sector.
+    func unlockCost(for coord: SectorCoordinate) -> Int {
+        guard let sector = boardManager.sector(at: coord) else { return Constants.sectorUnlockCost }
+        switch sector.status {
+        case .locked:
+            return hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost
+        case .inactive:
+            let dist = boardManager.distanceToNearestSolved(from: coord)
+            let base = max(2, dist * 4)
+            return hasPerk(.sectorDiscount) ? max(1, base / 2) : base
+        default:
+            return 0
+        }
+    }
+
     func applyPerk(_ perk: RunPerk) {
         switch perk {
         case .revealOneBooster:
@@ -276,6 +292,8 @@ class GameState: ObservableObject {
 
     func unlockSector(_ coord: SectorCoordinate) {
         if GameActions.unlockSectorWithGems(sectorCoord: coord, gameState: self) {
+            AudioManager.shared.play(.boosterUsed)
+            HapticsManager.shared.play(.lockedSectorTap)
             onSectorStatusChanged?(coord, .active)
             objectWillChange.send()
         }
@@ -388,6 +406,15 @@ class GameState: ObservableObject {
         boardManager.densityReduction = Double(profile.densityShieldLevel) * 0.03
 
         boardManager.reset()
+
+        // Pre-generate and activate the 3×3 starting cluster so the player
+        // has an immediate foothold. Everything else generates as .inactive.
+        for dx in -1...1 {
+            for dy in -1...1 {
+                boardManager.ensureSector(at: SectorCoordinate(x: dx, y: dy)).status = .active
+            }
+        }
+
         syncAudioHaptics()
         MusicEngine.shared.sectorsCompleted = 0
         MusicEngine.shared.start()
