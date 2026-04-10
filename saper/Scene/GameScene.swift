@@ -158,6 +158,7 @@ class GameScene: SKScene {
             cameraPosition: cameraNode.position,
             cameraScale: cameraNode.xScale
         )
+        gameState.focusedSector = cameraController.centerSectorCoordinate()
     }
 
     // MARK: - Sector Loading
