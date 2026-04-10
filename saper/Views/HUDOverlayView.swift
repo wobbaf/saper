@@ -4,6 +4,7 @@ import SwiftUI
 /// The overlay passes through touches except for interactive elements.
 struct HUDOverlayView: View {
     @ObservedObject var gameState: GameState
+    var onShopTapped: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -68,6 +69,15 @@ struct HUDOverlayView: View {
                     .cornerRadius(8)
                 }
                 .disabled(gameState.undoMineAvailable <= 0)
+
+                Button(action: onShopTapped) {
+                    Image(systemName: "bag.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.cyan)
+                        .frame(width: 36, height: 36)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(8)
+                }
 
                 Button(action: { gameState.pauseGame() }) {
                     Image(systemName: "pause.fill")

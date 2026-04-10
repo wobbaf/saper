@@ -196,9 +196,9 @@ struct MainMenuView: View {
 
                     Button(action: { showShop = true }) {
                         VStack(spacing: 4) {
-                            Image(systemName: "bag.fill")
+                            Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 22))
-                            Text("Shop")
+                            Text("Upgrades")
                                 .font(.system(size: 10))
                         }
                         .foregroundColor(isDark ? .cyan.opacity(0.8) : .cyan)
@@ -217,7 +217,7 @@ struct MainMenuView: View {
             LeaderboardView()
         }
         .sheet(isPresented: $showShop) {
-            ShopView(gameState: gameState)
+            PrestigeShopView(gameState: gameState)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {

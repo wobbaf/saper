@@ -49,7 +49,11 @@ class GameState: ObservableObject {
     func perkStacks(_ perk: RunPerk) -> Int { runPerks[perk.rawValue] ?? 0 }
     func hasPerk(_ perk: RunPerk) -> Bool { perkStacks(perk) > 0 }
 
-    var xpMultiplier: Double { hasPerk(.xpRush) ? 1.5 : 1.0 }
+    var xpMultiplier: Double {
+        let runBonus = hasPerk(.xpRush) ? 1.5 : 1.0
+        let prestigeBonus = 1.0 + Double(profile.scholarLevel) * 0.25
+        return runBonus * prestigeBonus
+    }
     var sectorUnlockCost: Int { hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost }
 
     func applyPerk(_ perk: RunPerk) {
@@ -290,26 +294,27 @@ class GameState: ObservableObject {
         let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier)
         let leveledUp = profile.addXP(xpGained)
         if leveledUp && pendingPerkOffer.isEmpty {
-            pendingPerkOffer = RunPerk.generateOffer()
+            let offerCount = profile.extraChoiceUnlocked ? 4 : 3
+            pendingPerkOffer = RunPerk.generateOffer(count: offerCount)
             AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
             HapticsManager.shared.play(.levelUp)
             MusicEngine.shared.triggerLevelUp()
         }
 
-        // Collect gems (base + gem magnet bonus)
+        // Collect gems (base + prospector prestige + gem magnet run perk)
         if let sector = boardManager.sector(at: coord),
            sector.gemReward > 0 && !sector.gemCollected {
             sector.gemCollected = true
-            let totalGems = sector.gemReward + perkStacks(.gemMagnet)
+            let totalGems = sector.gemReward + profile.prospectorLevel + perkStacks(.gemMagnet)
             profile.gems += totalGems
             gemsCollectedThisSession += totalGems
             let _ = profile.addXP(Int(Double(sector.gemReward * Constants.xpPerGemFind) * xpMultiplier))
             AudioManager.shared.playCompound(SoundEffect.gemChime)
             HapticsManager.shared.play(.gemCollected)
             onGemCollected?(totalGems)
-        } else if perkStacks(.gemMagnet) > 0 {
-            // Gem magnet still fires even for sectors without a gem reward
-            let bonus = perkStacks(.gemMagnet)
+        } else if perkStacks(.gemMagnet) > 0 || profile.prospectorLevel > 0 {
+            // Gem magnet / prospector still fire even for sectors without a base gem reward
+            let bonus = perkStacks(.gemMagnet) + profile.prospectorLevel
             profile.gems += bonus
             gemsCollectedThisSession += bonus
             onGemCollected?(bonus)
@@ -348,14 +353,18 @@ class GameState: ObservableObject {
         difficultyTier = 0
         boardManager.difficultyBonus = 0.0
 
-        // Per-run boosters initialised from profile base stock
+        // Per-run boosters: base stock + headstart prestige bonus
+        let headstart = profile.headstartLevel
         runBoosters = [
-            BoosterType.revealOne.rawValue:   profile.revealOneCount,
-            BoosterType.solveSector.rawValue: profile.solveSectorCount,
-            BoosterType.undoMine.rawValue:    profile.undoMineCount
+            BoosterType.revealOne.rawValue:   profile.revealOneCount + headstart,
+            BoosterType.solveSector.rawValue: profile.solveSectorCount + headstart,
+            BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
         ]
         runPerks = [:]
         focusedSector = SectorCoordinate(x: 0, y: 0)
+
+        // Apply density shield prestige
+        boardManager.densityReduction = Double(profile.densityShieldLevel) * 0.03
 
         boardManager.reset()
         syncAudioHaptics()
@@ -406,6 +415,7 @@ class GameState: ObservableObject {
                       Constants.maxDifficultyTier)
         difficultyTier = tier
         boardManager.difficultyBonus = Double(tier) * Constants.densityBonusPerTier
+        boardManager.densityReduction = Double(profile.densityShieldLevel) * 0.03
 
         syncAudioHaptics()
         MusicEngine.shared.start()

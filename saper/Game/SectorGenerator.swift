@@ -4,10 +4,10 @@ import GameplayKit
 struct SectorGenerator {
 
     /// Generate a sector with mines placed according to density rules.
-    static func generate(at coord: SectorCoordinate, globalSeed: UInt64, difficultyBonus: Double = 0.0) -> Sector {
+    static func generate(at coord: SectorCoordinate, globalSeed: UInt64, difficultyBonus: Double = 0.0, densityReduction: Double = 0.0) -> Sector {
         let rng = SeededRandom.rng(globalSeed: globalSeed, sector: coord)
         let distance = coord.distanceFromOrigin
-        let density = min(Constants.baseDensity + Double(distance) * Constants.densityMultiplier + difficultyBonus, Constants.maxDensity)
+        let density = max(0.05, min(Constants.baseDensity + Double(distance) * Constants.densityMultiplier + difficultyBonus - densityReduction, Constants.maxDensity))
 
         let size = Constants.sectorSize
         var tiles = [[Tile]](repeating: [Tile](repeating: Tile(), count: size), count: size)
