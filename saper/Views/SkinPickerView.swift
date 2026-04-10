@@ -70,7 +70,7 @@ struct SkinPickerView: View {
         switch skin {
         case .space:     return Color(red: 0.12, green: 0.12, blue: 0.22)
         case .neonGrid:  return Color(red: 0.08, green: 0.08, blue: 0.08)
-        case .minecraft: return Color(red: 0.53, green: 0.35, blue: 0.14)
+        case .minecraft: return Color(red: 0.40, green: 0.62, blue: 0.18)
         }
     }
 
