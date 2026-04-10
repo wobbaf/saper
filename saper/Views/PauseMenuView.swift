@@ -10,6 +10,9 @@ struct PauseMenuView: View {
 
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
+    @State private var showRestartConfirm = false
+    @State private var showMainMenuConfirm = false
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.7)
@@ -33,11 +36,23 @@ struct PauseMenuView: View {
                 VStack(spacing: 12) {
                     MenuButton(title: "Resume", icon: "play.fill", color: theme.accentColor, action: onResume)
                     MenuButton(title: "Shop", icon: "bag.fill", color: theme.secondaryColor, action: onShop)
-                    MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: theme.accentColor.opacity(0.7), action: onRestart)
-                    MenuButton(title: "Main Menu", icon: "house.fill", color: .white.opacity(0.4), action: onMainMenu)
+                    MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: theme.accentColor.opacity(0.7), action: { showRestartConfirm = true })
+                    MenuButton(title: "Main Menu", icon: "house.fill", color: .white.opacity(0.4), action: { showMainMenuConfirm = true })
                 }
             }
             .padding(30)
+        }
+        .confirmationDialog("Restart game?", isPresented: $showRestartConfirm, titleVisibility: .visible) {
+            Button("Restart", role: .destructive, action: onRestart)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your current progress will be lost.")
+        }
+        .confirmationDialog("Quit to main menu?", isPresented: $showMainMenuConfirm, titleVisibility: .visible) {
+            Button("Quit", role: .destructive, action: onMainMenu)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your current progress will be lost.")
         }
     }
 }
