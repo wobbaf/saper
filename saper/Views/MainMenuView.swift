@@ -43,15 +43,15 @@ struct MainMenuView: View {
                 VStack(spacing: 8) {
                     ZStack {
                         if isDark {
-                            Text("MINESWEEPER")
-                                .font(.system(size: 36, weight: .black, design: .monospaced))
+                            Text("MINESWEEPER FOREVER")
+                                .font(.system(size: 28, weight: .black, design: .monospaced))
                                 .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
                                 .blur(radius: titleGlowPhase ? 14 : 8)
                                 .opacity(titleGlowPhase ? 0.65 : 0.35)
                         }
 
-                        Text("MINESWEEPER")
-                            .font(.system(size: 36, weight: .black, design: .monospaced))
+                        Text("MINESWEEPER FOREVER")
+                            .font(.system(size: 28, weight: .black, design: .monospaced))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: isDark ? theme.titleColors : [.blue, .purple, .blue],
