@@ -108,6 +108,19 @@ class TileRenderer {
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(bg)
 
+        if skin == .minecraft {
+            // Oak plank grain: three horizontal darker stripes
+            let grain = SKColor(red: 0.42, green: 0.30, blue: 0.15, alpha: 0.55)
+            let stripeYs: [CGFloat] = [size.height * 0.28, size.height * 0.52, size.height * 0.76]
+            for sy in stripeYs {
+                let stripe = SKShapeNode(rectOf: CGSize(width: size.width - 4, height: 2))
+                stripe.fillColor = grain
+                stripe.strokeColor = .clear
+                stripe.position = CGPoint(x: size.width / 2, y: sy)
+                container.addChild(stripe)
+            }
+        }
+
         if number > 0 {
             let color = SKColor.numberColor(for: number)
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -232,6 +245,10 @@ class TileRenderer {
     }
 
     private func createFlagTile(size: CGSize) -> SKNode {
+        if skin == .minecraft {
+            return createObsidianTile(size: size)
+        }
+
         let container = SKNode()
 
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 4)
@@ -259,6 +276,36 @@ class TileRenderer {
         flag.strokeColor = .clear
         flag.position = CGPoint(x: size.width / 2 + 1, y: size.height / 2 + 10)
         container.addChild(flag)
+
+        return container
+    }
+
+    /// Obsidian block tile for Minecraft flagged state.
+    private func createObsidianTile(size: CGSize) -> SKNode {
+        let container = SKNode()
+
+        let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 0)
+        bg.fillColor = skin.obsidianColor
+        bg.strokeColor = SKColor(red: 0.25, green: 0.10, blue: 0.35, alpha: 1)
+        bg.lineWidth = 1
+        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        container.addChild(bg)
+
+        // Scattered purple-tinted pixel highlights — obsidian's characteristic shimmer
+        let accent = skin.obsidianAccentColor
+        let px: CGFloat = 5
+        let offsets: [(CGFloat, CGFloat)] = [
+            (5, 5), (16, 9), (30, 5), (38, 14),
+            (8, 22), (22, 18), (34, 25),
+            (6, 34), (18, 30), (32, 36), (38, 28)
+        ]
+        for (ox, oy) in offsets {
+            let dot = SKShapeNode(rectOf: CGSize(width: px, height: px))
+            dot.fillColor = accent
+            dot.strokeColor = .clear
+            dot.position = CGPoint(x: ox + px / 2, y: oy + px / 2)
+            container.addChild(dot)
+        }
 
         return container
     }
