@@ -9,8 +9,9 @@ DerivedData/
 xcuserdata/
 *.xcworkspace/xcuserdata/
 
-# Ship config (contains API credentials)
+# Ship script and config (local only, contains credentials)
 .ship.env
+scripts/
 
 # macOS
 .DS_Store
