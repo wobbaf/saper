@@ -105,6 +105,28 @@ class BoardManager {
         return true
     }
 
+    /// BFS distance from `coord` to the nearest solved sector.
+    /// Falls back to Chebyshev distance from the origin if no solved sector exists yet.
+    func distanceToNearestSolved(from coord: SectorCoordinate) -> Int {
+        var queue: [(SectorCoordinate, Int)] = [(coord, 0)]
+        var visited: Set<SectorCoordinate> = [coord]
+
+        while !queue.isEmpty {
+            let (current, dist) = queue.removeFirst()
+            if let sector = sectors[current], sector.status == .solved {
+                return dist
+            }
+            for neighbor in current.neighbors {
+                if !visited.contains(neighbor) {
+                    visited.insert(neighbor)
+                    queue.append((neighbor, dist + 1))
+                }
+            }
+        }
+        // No solved sector found yet — proxy with distance from origin
+        return coord.chebyshevDistance(to: SectorCoordinate(x: 0, y: 0))
+    }
+
     /// After ensureSafeFirstTap moves a mine in `coord`, neighbouring sectors may have
     /// already-revealed border tiles whose adjacentMineCount is now stale.
     /// Recomputes every non-mine tile in each existing neighbour and returns the

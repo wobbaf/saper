@@ -130,12 +130,44 @@ class GameScene: SKScene {
         guard localX >= 0, localX < Constants.sectorSize,
               localY >= 0, localY < Constants.sectorSize else { return }
 
+        // Inactive or mine-hit locked sectors: tap to unlock with gems
+        if sector.status == .inactive || sector.status == .locked {
+            attemptUnlockSector(sectorCoord: sectorCoord)
+            return
+        }
+
         let tile = sector.tiles[localY][localX]
 
         if tile.state == .revealed && tile.adjacentMineCount > 0 {
             gameState.chordReveal(globalX: globalX, globalY: globalY)
         } else if tile.state == .hidden {
             gameState.revealTile(globalX: globalX, globalY: globalY)
+        }
+    }
+
+    private func attemptUnlockSector(sectorCoord: SectorCoordinate) {
+        let cost = gameState.unlockCost(for: sectorCoord)
+        let center = CGPoint(
+            x: CGFloat(sectorCoord.originTileX) * Constants.tileSize + Constants.sectorPixelSize / 2,
+            y: CGFloat(sectorCoord.originTileY) * Constants.tileSize + Constants.sectorPixelSize / 2
+        )
+        if gameState.profile.gems >= cost {
+            gameState.unlockSector(sectorCoord)
+            hudNode.showFloatingText(
+                "-\(cost) 💎",
+                at: center,
+                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1.0)
+            )
+        } else {
+            // Not enough gems — flash the cost
+            let needed = cost - gameState.profile.gems
+            hudNode.showFloatingText(
+                "Need \(needed) more 💎",
+                at: center,
+                color: SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 1.0)
+            )
+            AudioManager.shared.play(.lockedSectorTap)
+            HapticsManager.shared.play(.lockedSectorTap)
         }
     }
 
