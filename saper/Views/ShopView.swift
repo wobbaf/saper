@@ -68,7 +68,11 @@ private struct ShopRow: View {
     @ObservedObject var gameState: GameState
     let isDark: Bool
 
+    /// During a run show the live run count; on the menu show the profile stock.
     private var count: Int {
+        if gameState.isPlaying {
+            return gameState.runBoosters[item.booster.rawValue] ?? 0
+        }
         switch item.booster {
         case .revealOne:   return gameState.profile.revealOneCount
         case .solveSector: return gameState.profile.solveSectorCount
@@ -141,6 +145,10 @@ private struct ShopRow: View {
         case .revealOne:   gameState.profile.revealOneCount += 1
         case .solveSector: gameState.profile.solveSectorCount += 1
         case .undoMine:    gameState.profile.undoMineCount += 1
+        }
+        // If buying mid-run, also add to the live run stock so the HUD updates immediately
+        if gameState.isPlaying {
+            gameState.runBoosters[item.booster.rawValue, default: 0] += 1
         }
     }
 }
