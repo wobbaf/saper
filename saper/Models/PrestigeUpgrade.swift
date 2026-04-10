@@ -8,6 +8,7 @@ enum PrestigeUpgrade: String, CaseIterable {
     case prospector     // +1 gem from gem-bearing sectors per stack
     case densityShield  // −3% global mine density per stack
     case extraChoice    // perk offer shows 4 options instead of 3 (one-time)
+    case extraHearts    // +1 max heart in endless mode per stack
 
     var displayName: String {
         switch self {
@@ -16,6 +17,7 @@ enum PrestigeUpgrade: String, CaseIterable {
         case .prospector:    return "Prospector"
         case .densityShield: return "Density Shield"
         case .extraChoice:   return "Extra Choice"
+        case .extraHearts:   return "Extra Hearts"
         }
     }
 
@@ -26,6 +28,7 @@ enum PrestigeUpgrade: String, CaseIterable {
         case .prospector:    return "+1 gem from every gem sector, every run."
         case .densityShield: return "Reduce global mine density by 3%."
         case .extraChoice:   return "Level-up perk offers show 4 choices instead of 3."
+        case .extraHearts:   return "+1 starting heart in Endless mode. Max 5 hearts."
         }
     }
 
@@ -36,6 +39,7 @@ enum PrestigeUpgrade: String, CaseIterable {
         case .prospector:    return "sparkles"
         case .densityShield: return "shield.lefthalf.filled"
         case .extraChoice:   return "square.grid.2x2.fill"
+        case .extraHearts:   return "heart.fill"
         }
     }
 
@@ -46,6 +50,7 @@ enum PrestigeUpgrade: String, CaseIterable {
         case .prospector:    return Color(red: 0.3, green: 1.0, blue: 0.6)
         case .densityShield: return .blue
         case .extraChoice:   return .purple
+        case .extraHearts:   return .pink
         }
     }
 
@@ -56,6 +61,7 @@ enum PrestigeUpgrade: String, CaseIterable {
         case .prospector:    return 3
         case .densityShield: return 3
         case .extraChoice:   return 1
+        case .extraHearts:   return 2
         }
     }
 
@@ -67,6 +73,7 @@ enum PrestigeUpgrade: String, CaseIterable {
         case .prospector:    return [30, 60, 100]
         case .densityShield: return [40, 80, 130]
         case .extraChoice:   return [80]
+        case .extraHearts:   return [60, 120]
         }
     }
 
