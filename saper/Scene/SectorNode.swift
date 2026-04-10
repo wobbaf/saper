@@ -41,12 +41,18 @@ class SectorNode: SKNode {
             height: sectorPixelSize
         )
         borderNode = SKShapeNode(rect: borderRect)
-        borderNode?.strokeColor = SKColor(white: 0.3, alpha: 0.15)
-        borderNode?.lineWidth = 1
+        borderNode?.strokeColor = SKColor(red: 0.0, green: 0.8, blue: 1.0, alpha: 0.35)
+        borderNode?.lineWidth = 1.5
         borderNode?.fillColor = .clear
         borderNode?.zPosition = -1
         if let border = borderNode {
             addChild(border)
+            // Slow neon pulse on the grid line
+            let dim = SKAction.customAction(withDuration: 2.0) { node, t in
+                let alpha = 0.20 + 0.18 * abs(sin(Double(t) * .pi / 2.0))
+                (node as? SKShapeNode)?.strokeColor = SKColor(red: 0.0, green: 0.8, blue: 1.0, alpha: alpha)
+            }
+            border.run(SKAction.repeatForever(dim))
         }
 
         updateOverlay(status: sector.status)

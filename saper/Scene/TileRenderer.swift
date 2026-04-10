@@ -88,25 +88,30 @@ class TileRenderer {
 
         if number > 0 {
             let color = SKColor.numberColor(for: number)
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
-            // Glow halo: larger, semi-transparent text behind the main label
-            // No SKEffectNode/CIFilter needed — just a scaled-up blurred copy
-            let glow = SKLabelNode(text: "\(number)")
-            glow.fontName = "Menlo-Bold"
-            glow.fontSize = 26
-            glow.fontColor = color.withAlphaComponent(0.25)
-            glow.verticalAlignmentMode = .center
-            glow.horizontalAlignmentMode = .center
-            glow.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            container.addChild(glow)
+            // Three-layer neon glow — intensity scales with number value
+            let glowStrength = CGFloat(0.12 + Float(number) * 0.055)
+            let glowLayers: [(CGFloat, CGFloat)] = [(42, 0.55), (56, 0.28), (70, 0.11)]
+            for (fontSize, alphaScale) in glowLayers {
+                let halo = SKLabelNode(text: "\(number)")
+                halo.fontName = "Menlo-Bold"
+                halo.fontSize = fontSize
+                halo.fontColor = color.withAlphaComponent(glowStrength * alphaScale)
+                halo.verticalAlignmentMode = .center
+                halo.horizontalAlignmentMode = .center
+                halo.position = center
+                container.addChild(halo)
+            }
 
+            // Sharp foreground label
             let label = SKLabelNode(text: "\(number)")
             label.fontName = "Menlo-Bold"
             label.fontSize = 22
             label.fontColor = color
             label.verticalAlignmentMode = .center
             label.horizontalAlignmentMode = .center
-            label.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            label.position = center
             container.addChild(label)
         }
 
