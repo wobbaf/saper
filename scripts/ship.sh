@@ -2,14 +2,19 @@
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="$PROJECT_DIR/.ship.env"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "ERROR: $ENV_FILE not found. Copy .ship.env.example and fill in your credentials."
+  exit 1
+fi
+source "$ENV_FILE"
+
 PROJECT="$PROJECT_DIR/saper.xcodeproj"
 ARCHIVE="$PROJECT_DIR/build/saper.xcarchive"
 EXPORT_DIR="$PROJECT_DIR/build/saper-appstore"
 EXPORT_OPTIONS="$PROJECT_DIR/ExportOptions.plist"
-API_KEY="MJYPRN4GK9"
-API_ISSUER="0cba0ee4-4705-4b38-b98f-4de8790ade63"
-API_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${API_KEY}.p8"
-TEAM="Z5NCL9CX9B"
+API_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY}.p8"
 
 cd "$PROJECT_DIR"
 
@@ -33,9 +38,9 @@ xcodebuild archive \
   -archivePath "$ARCHIVE" \
   -allowProvisioningUpdates \
   -authenticationKeyPath "$API_KEY_PATH" \
-  -authenticationKeyID "$API_KEY" \
-  -authenticationKeyIssuerID "$API_ISSUER" \
-  DEVELOPMENT_TEAM="$TEAM" \
+  -authenticationKeyID "$ASC_API_KEY" \
+  -authenticationKeyIssuerID "$ASC_API_ISSUER" \
+  DEVELOPMENT_TEAM="$TEAM_ID" \
   | grep -E "error:|ARCHIVE SUCCEEDED|BUILD FAILED"
 
 echo "==> Exporting..."
@@ -49,8 +54,8 @@ echo "==> Uploading to TestFlight..."
 xcrun altool --upload-app \
   -f "$EXPORT_DIR/saper.ipa" \
   -t ios \
-  --apiKey "$API_KEY" \
-  --apiIssuer "$API_ISSUER" \
+  --apiKey "$ASC_API_KEY" \
+  --apiIssuer "$ASC_API_ISSUER" \
   2>&1 | grep -E "UPLOAD SUCCEEDED|UPLOAD FAILED|ERROR|Delivery UUID"
 
 echo "==> Committing build number..."
