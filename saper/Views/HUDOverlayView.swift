@@ -1,95 +1,28 @@
 import SwiftUI
 
 /// SwiftUI overlay showing game HUD elements.
-/// The overlay passes through touches except for interactive elements.
 struct HUDOverlayView: View {
     @ObservedObject var gameState: GameState
     var onShopTapped: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top HUD bar
-            topBar
-                .padding(.horizontal, 16)
+            topPill
+                .padding(.horizontal, 12)
                 .padding(.top, 8)
 
-            // XP bar
             xpBar
                 .padding(.horizontal, 16)
-                .padding(.top, 4)
+                .padding(.top, 5)
 
             Spacer()
         }
-        .allowsHitTesting(false) // entire VStack is pass-through
-        .overlay(alignment: .topTrailing) {
-            // Re-overlay just the interactive buttons — aligned topTrailing
-            // so there's no Spacer eating touches
-            HStack(spacing: 8) {
-                Button(action: useRevealOne) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "eye.fill")
-                            .font(.system(size: 12))
-                        Text("\(gameState.revealOneAvailable)")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    }
-                    .foregroundColor(.yellow)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .disabled(gameState.revealOneAvailable <= 0)
-
-                Button(action: useSolveSector) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 12))
-                        Text("\(gameState.solveSectorAvailable)")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    }
-                    .foregroundColor(.purple)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .disabled(gameState.solveSectorAvailable <= 0)
-
-                Button(action: useUndoMine) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "arrow.uturn.backward")
-                            .font(.system(size: 12))
-                        Text("\(gameState.undoMineAvailable)")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    }
-                    .foregroundColor(.orange)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .disabled(gameState.undoMineAvailable <= 0)
-
-                Button(action: onShopTapped) {
-                    Image(systemName: "bag.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.cyan)
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(8)
-                }
-
-                Button(action: { gameState.pauseGame() }) {
-                    Image(systemName: "pause.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(8)
-                }
-            }
-            .padding(.trailing, 16)
-            .padding(.top, 8)
+        .allowsHitTesting(false)
+        // Re-enable hit testing only on the interactive pill
+        .overlay(alignment: .top) {
+            interactivePill
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
         }
         .overlay {
             if gameState.gameMode == .hardcore {
@@ -108,87 +41,158 @@ struct HUDOverlayView: View {
         }
     }
 
-    private var topBar: some View {
-        HStack {
-            // Gem count
-            HStack(spacing: 4) {
-                Image(systemName: "diamond.fill")
-                    .foregroundColor(.cyan)
-                    .font(.system(size: 14))
-                Text("\(gameState.profile.gems)")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(.white)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(8)
+    // MARK: - Non-interactive pill (stats only, for layout/background)
 
-            // Score
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundColor(.green)
-                    .font(.system(size: 14))
-                Text("\(gameState.sectorsSolvedThisSession)")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(.white)
+    private var topPill: some View {
+        pillBackground {
+            HStack(spacing: 0) {
+                statsSection
+                pillDivider
+                boosterSection
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(8)
+        }
+        .allowsHitTesting(false)
+    }
 
-            if gameState.gameMode == .timed {
-                HStack(spacing: 4) {
-                    Image(systemName: "timer")
-                        .foregroundColor(.orange)
-                        .font(.system(size: 14))
-                    Text(gameState.timerManager.formattedTime)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
-                        .foregroundColor(gameState.timerManager.remaining <= 30 ? .red : .white)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(8)
+    // MARK: - Interactive overlay (same shape, all buttons active)
+
+    private var interactivePill: some View {
+        pillBackground {
+            HStack(spacing: 0) {
+                statsSection.allowsHitTesting(false)
+                pillDivider.allowsHitTesting(false)
+                boosterSection
             }
-
-            Spacer()
         }
     }
 
+    @ViewBuilder
+    private func pillBackground<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.55))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    )
+            )
+    }
+
+    // MARK: - Stats section (gems · sectors · timer)
+
+    private var statsSection: some View {
+        HStack(spacing: 14) {
+            statItem(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: .cyan)
+
+            statItem(icon: "checkmark.seal.fill", value: "\(gameState.sectorsSolvedThisSession)", color: .green)
+
+            if gameState.gameMode == .timed {
+                statItem(
+                    icon: "timer",
+                    value: gameState.timerManager.formattedTime,
+                    color: gameState.timerManager.remaining <= 30 ? .red : .orange
+                )
+            }
+        }
+    }
+
+    private func statItem(icon: String, value: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundColor(color)
+            Text(value)
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
+        }
+    }
+
+    private var pillDivider: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.15))
+            .frame(width: 1, height: 22)
+            .padding(.horizontal, 10)
+    }
+
+    // MARK: - Booster + action section
+
+    private var boosterSection: some View {
+        HStack(spacing: 0) {
+            boosterButton(icon: "eye.fill",              count: gameState.revealOneAvailable,    color: .yellow, action: useRevealOne)
+            boosterButton(icon: "checkmark.seal.fill",   count: gameState.solveSectorAvailable,  color: .purple, action: useSolveSector)
+            boosterButton(icon: "arrow.uturn.backward",  count: gameState.undoMineAvailable,     color: .orange, action: useUndoMine)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.15))
+                .frame(width: 1, height: 22)
+                .padding(.horizontal, 8)
+
+            actionButton(icon: "bag.fill",   color: .cyan,  action: onShopTapped)
+            actionButton(icon: "pause.fill", color: .white, action: { gameState.pauseGame() })
+        }
+    }
+
+    private func boosterButton(icon: String, count: Int, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                Text("\(count)")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+            }
+            .foregroundColor(count > 0 ? color : color.opacity(0.35))
+            .frame(minWidth: 44, minHeight: 36)
+        }
+        .disabled(count <= 0)
+        .buttonStyle(.plain)
+    }
+
+    private func actionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 15))
+                .foregroundColor(color)
+                .frame(width: 36, height: 36)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - XP bar
+
     private var xpBar: some View {
-        HStack {
+        HStack(spacing: 6) {
             Text("Lv.\(gameState.profile.level)")
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(.white.opacity(0.6))
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Rectangle()
+                    Capsule()
                         .fill(Color.white.opacity(0.1))
                         .frame(height: 4)
-                        .cornerRadius(2)
 
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.cyan, .purple],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: [.cyan, .purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
                         .frame(width: geometry.size.width * gameState.profile.xpProgress, height: 4)
-                        .cornerRadius(2)
                 }
             }
             .frame(height: 4)
 
             Text("\(gameState.profile.xp)/\(gameState.profile.xpForNextLevel)")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(.white.opacity(0.4))
         }
+        .allowsHitTesting(false)
     }
+
+    // MARK: - Actions
 
     private func useRevealOne() {
         gameState.useRevealOne(sectorCoord: gameState.focusedSector)
@@ -199,7 +203,6 @@ struct HUDOverlayView: View {
     }
 
     private func useUndoMine() {
-        // Find the nearest locked sector
         let center = gameState.focusedSector
         for radius in 0...5 {
             for dx in -radius...radius {
