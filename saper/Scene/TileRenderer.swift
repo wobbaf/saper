@@ -58,31 +58,44 @@ class TileRenderer {
 
     private func createHiddenTile(size: CGSize) -> SKNode {
         let container = SKNode()
+        let cr = skin.tileCornerRadius
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
-        let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 4)
+        let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: cr)
         bg.fillColor = skin.hiddenTileColor
         bg.strokeColor = skin.hiddenTileBorderColor
-        bg.lineWidth = 1
-        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        bg.lineWidth = skin == .minecraft ? 2 : 1
+        bg.position = center
         container.addChild(bg)
 
-        // Subtle inner highlight
-        let highlight = SKShapeNode(rectOf: CGSize(width: size.width - 8, height: size.height - 8), cornerRadius: 2)
-        highlight.fillColor = SKColor(white: 1.0, alpha: 0.03)
-        highlight.strokeColor = .clear
-        highlight.position = CGPoint(x: size.width / 2, y: size.height / 2 + 1)
-        container.addChild(highlight)
+        if skin == .minecraft {
+            // Grass strip across the top (~25% of tile height)
+            let grassH: CGFloat = (size.height - 2) * 0.25
+            let grass = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: grassH), cornerRadius: 0)
+            grass.fillColor = SKColor(red: 0.29, green: 0.60, blue: 0.05, alpha: 1)
+            grass.strokeColor = .clear
+            grass.position = CGPoint(x: center.x, y: size.height - 1 - grassH / 2)
+            container.addChild(grass)
+        } else {
+            // Subtle inner highlight (non-Minecraft only)
+            let highlight = SKShapeNode(rectOf: CGSize(width: size.width - 8, height: size.height - 8), cornerRadius: 2)
+            highlight.fillColor = SKColor(white: 1.0, alpha: 0.03)
+            highlight.strokeColor = .clear
+            highlight.position = CGPoint(x: center.x, y: center.y + 1)
+            container.addChild(highlight)
+        }
 
         return container
     }
 
     private func createRevealedTile(number: Int, size: CGSize) -> SKNode {
         let container = SKNode()
+        let cr = max(0, skin.tileCornerRadius - 2)
 
-        let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 2)
+        let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: cr)
         bg.fillColor = skin.revealedTileColor
         bg.strokeColor = skin.gridLineColor
-        bg.lineWidth = 0.5
+        bg.lineWidth = skin == .minecraft ? 1.5 : 0.5
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(bg)
 

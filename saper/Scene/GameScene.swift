@@ -270,6 +270,10 @@ class GameScene: SKScene {
             let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
             let r = t * 0.12
             return SKColor(red: r, green: 0.0, blue: max(0.00, 0.02 - t * 0.02), alpha: 1)
+        case .minecraft:
+            // Dirt → darker burnt earth as difficulty rises
+            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
+            return SKColor(red: 0.35 + t * 0.05, green: max(0.05, 0.22 - t * 0.10), blue: 0.08 - t * 0.05, alpha: 1)
         }
     }
 
