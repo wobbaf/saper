@@ -6,6 +6,11 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showResetSaveConfirmation = false
 
+    // Developer mode
+    @AppStorage("devModeEnabled") private var devModeEnabled = false
+    @State private var devTapCount = 0
+    @State private var devTapResetTask: Task<Void, Never>? = nil
+
     var body: some View {
         NavigationView {
             List {
@@ -98,6 +103,64 @@ struct SettingsView: View {
                         } label: {
                             Label("Reset Saved Game", systemImage: "trash")
                         }
+                    }
+                }
+
+                Section {
+                    HStack {
+                        Text("Version")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("1.0")
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .onTapGesture {
+                                devTapResetTask?.cancel()
+                                devTapCount += 1
+                                if devTapCount >= 7 {
+                                    devTapCount = 0
+                                    devModeEnabled.toggle()
+                                } else {
+                                    devTapResetTask = Task {
+                                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                        devTapCount = 0
+                                    }
+                                }
+                            }
+                    }
+                }
+
+                if devModeEnabled {
+                    Section {
+                        HStack {
+                            Image(systemName: "hammer.fill")
+                                .foregroundColor(.orange)
+                            Text("Developer Mode")
+                                .foregroundColor(.orange)
+                                .font(.system(size: 13, weight: .semibold))
+                            Spacer()
+                            Toggle("", isOn: $devModeEnabled)
+                                .labelsHidden()
+                        }
+                        Button {
+                            gameState.profile.gems += 100
+                        } label: {
+                            Label("+100 gems", systemImage: "diamond.fill")
+                        }
+                        Button {
+                            gameState.profile.gems += 1000
+                        } label: {
+                            Label("+1000 gems", systemImage: "diamond.fill")
+                        }
+                        Button {
+                            gameState.profile.xp += gameState.profile.xpForNextLevel - gameState.profile.xp
+                        } label: {
+                            Label("Force level up", systemImage: "arrow.up.circle.fill")
+                        }
+                    } header: {
+                        Text("Developer")
+                    } footer: {
+                        Text("Tap version number 7 times to toggle this section.")
                     }
                 }
             }
