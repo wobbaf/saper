@@ -136,15 +136,16 @@ class GameState: ObservableObject {
             AudioManager.shared.play(.mineExplosion)
             HapticsManager.shared.play(.mineHit)
             MusicEngine.shared.triggerMineHit()
-            onMineHit?(coord)
-            onSectorStatusChanged?(coord, .locked)
 
+            let absorbed: Bool
             if gameMode == .hardcore {
                 let shields = perkStacks(.mineShield)
                 if shields > 0 {
                     runPerks[RunPerk.mineShield.rawValue] = shields - 1
+                    absorbed = true
                 } else {
                     isGameOver = true
+                    absorbed = false
                 }
             } else if gameMode == .endless {
                 livesRemaining -= 1
@@ -152,6 +153,14 @@ class GameState: ObservableObject {
                     livesRemaining = 0
                     isGameOver = true
                 }
+                absorbed = livesRemaining > 0
+            } else {
+                absorbed = false
+            }
+
+            if !absorbed {
+                onMineHit?(coord)
+                onSectorStatusChanged?(coord, .locked)
             }
 
         case .alreadyRevealed:
