@@ -42,7 +42,7 @@ enum SkinType: String, Codable, CaseIterable {
         switch self {
         case .space:     return SKColor(red: 0.06, green: 0.06, blue: 0.12, alpha: 1)
         case .neonGrid:  return SKColor(red: 0.03, green: 0.03, blue: 0.03, alpha: 1)
-        case .minecraft: return SKColor(red: 0.44, green: 0.44, blue: 0.44, alpha: 1) // stone
+        case .minecraft: return SKColor(red: 0.64, green: 0.48, blue: 0.28, alpha: 1) // oak planks
         }
     }
 
@@ -50,8 +50,16 @@ enum SkinType: String, Codable, CaseIterable {
         switch self {
         case .space:     return SKColor(red: 0.15, green: 0.15, blue: 0.3,  alpha: 0.3)
         case .neonGrid:  return SKColor(red: 0.0,  green: 0.6,  blue: 0.8,  alpha: 0.4)
-        case .minecraft: return SKColor(red: 0.28, green: 0.28, blue: 0.28, alpha: 1.0) // cobblestone line
+        case .minecraft: return SKColor(red: 0.42, green: 0.30, blue: 0.15, alpha: 1.0) // dark wood border
         }
+    }
+
+    /// Obsidian colour used for flagged tiles in Minecraft skin
+    var obsidianColor: SKColor {
+        return SKColor(red: 0.07, green: 0.03, blue: 0.10, alpha: 1)
+    }
+    var obsidianAccentColor: SKColor {
+        return SKColor(red: 0.18, green: 0.08, blue: 0.26, alpha: 1)
     }
 
     /// Corner radius for tiles — Minecraft uses 0 for blocky look.
