@@ -124,8 +124,12 @@ struct SettingsView: View {
                             devModeEnabled.toggle()
                         } else {
                             devTapResetTask = Task {
-                                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                                await MainActor.run { devTapCount = 0 }
+                                do {
+                                    try await Task.sleep(nanoseconds: 3_000_000_000)
+                                    await MainActor.run { devTapCount = 0 }
+                                } catch is CancellationError {
+                                    // cancelled by next tap — do nothing
+                                } catch {}
                             }
                         }
                     }
