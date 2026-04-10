@@ -4,6 +4,8 @@ import Foundation
 class BoardManager {
     var sectors: [SectorCoordinate: Sector] = [:]
     let globalSeed: UInt64
+    /// Extra density added on top of the distance-based formula — bumped each difficulty tier.
+    var difficultyBonus: Double = 0.0
 
     init(globalSeed: UInt64) {
         self.globalSeed = globalSeed
@@ -15,7 +17,7 @@ class BoardManager {
         if let existing = sectors[coord] {
             return existing
         }
-        let sector = SectorGenerator.generate(at: coord, globalSeed: globalSeed)
+        let sector = SectorGenerator.generate(at: coord, globalSeed: globalSeed, difficultyBonus: difficultyBonus)
         sectors[coord] = sector
         return sector
     }

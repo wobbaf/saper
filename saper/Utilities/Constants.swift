@@ -11,6 +11,11 @@ enum Constants {
     static let densityMultiplier: Double = 0.005
     static let maxDensity: Double = 0.65
 
+    // Difficulty scaling — one tier every N sectors solved, +densityPerTier per tier
+    static let sectorsPerDifficultyTier: Int = 10
+    static let densityBonusPerTier: Double = 0.05
+    static let maxDifficultyTier: Int = 6   // caps at +0.30 density bonus
+
     // Sector loading
     static let loadRadius: Int = 3
     static let unloadRadius: Int = 8
