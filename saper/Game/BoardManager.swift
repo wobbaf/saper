@@ -105,6 +105,40 @@ class BoardManager {
         return true
     }
 
+    /// After ensureSafeFirstTap moves a mine in `coord`, neighbouring sectors may have
+    /// already-revealed border tiles whose adjacentMineCount is now stale.
+    /// Recomputes every non-mine tile in each existing neighbour and returns the
+    /// positions of revealed tiles whose count actually changed (for re-rendering).
+    func recomputeRevealedBorderTiles(around coord: SectorCoordinate) -> [FloodFill.TilePosition] {
+        var affected: [FloodFill.TilePosition] = []
+        let size = Constants.sectorSize
+
+        for neighborCoord in coord.neighbors {
+            guard let neighbor = sectors[neighborCoord] else { continue }
+            let ox = neighborCoord.originTileX
+            let oy = neighborCoord.originTileY
+
+            for row in 0..<size {
+                for col in 0..<size {
+                    let tile = neighbor.tiles[row][col]
+                    if tile.hasMine { continue }
+
+                    let gx = ox + col
+                    let gy = oy + row
+                    let newCount = adjacentMineCount(globalTileX: gx, globalTileY: gy)
+
+                    if newCount != tile.adjacentMineCount {
+                        neighbor.tiles[row][col].adjacentMineCount = newCount
+                        if tile.state == .revealed {
+                            affected.append(FloodFill.TilePosition(globalX: gx, globalY: gy))
+                        }
+                    }
+                }
+            }
+        }
+        return affected
+    }
+
     /// Reset the entire board.
     func reset() {
         sectors.removeAll()

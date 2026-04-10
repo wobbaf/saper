@@ -39,14 +39,13 @@ struct FloodFill {
             if tile.state == .revealed { continue }
             if tile.state == .flagged { continue }
 
-            // Compute adjacent count if not already done
-            if sector.tiles[localY][localX].adjacentMineCount == 0 && !tile.hasMine {
-                let count = boardManager.adjacentMineCount(
-                    globalTileX: pos.globalX,
-                    globalTileY: pos.globalY
-                )
-                sector.tiles[localY][localX].adjacentMineCount = count
-            }
+            // Always compute a fresh adjacent count — cached values can be stale
+            // when ensureSafeFirstTap relocated a mine in a neighbouring sector.
+            let count = boardManager.adjacentMineCount(
+                globalTileX: pos.globalX,
+                globalTileY: pos.globalY
+            )
+            sector.tiles[localY][localX].adjacentMineCount = count
 
             sector.tiles[localY][localX].state = .revealed
             sector.isModified = true
