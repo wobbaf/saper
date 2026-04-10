@@ -181,13 +181,11 @@ struct HUDOverlayView: View {
     }
 
     private func useRevealOne() {
-        let centerSector = SectorCoordinate(x: 0, y: 0)
-        gameState.useRevealOne(sectorCoord: centerSector)
+        gameState.useRevealOne(sectorCoord: gameState.focusedSector)
     }
 
     private func useSolveSector() {
-        let centerSector = SectorCoordinate(x: 0, y: 0)
-        gameState.useSolveSector(sectorCoord: centerSector)
+        gameState.useSolveSector(sectorCoord: gameState.focusedSector)
     }
 
     private func useUndoMine() {

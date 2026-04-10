@@ -13,6 +13,8 @@ class GameState: ObservableObject {
     @Published var tilesRevealedThisSession: Int = 0
     @Published var gemsCollectedThisSession: Int = 0
     @Published var isPlaying: Bool = false
+    /// The sector currently centered in the camera — updated by GameScene.
+    var focusedSector: SectorCoordinate = SectorCoordinate(x: 0, y: 0)
 
     // Per-run state — reset at the start of every run
     @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
@@ -328,6 +330,10 @@ class GameState: ObservableObject {
         isPlaying = true
         pendingPerkOffer = []
 
+        // Per-run state reset
+        profile.xp = 0
+        profile.level = 1
+
         // Per-run boosters initialised from profile base stock
         runBoosters = [
             BoosterType.revealOne.rawValue:   profile.revealOneCount,
@@ -335,6 +341,7 @@ class GameState: ObservableObject {
             BoosterType.undoMine.rawValue:    profile.undoMineCount
         ]
         runPerks = [:]
+        focusedSector = SectorCoordinate(x: 0, y: 0)
 
         boardManager.reset()
         syncAudioHaptics()
