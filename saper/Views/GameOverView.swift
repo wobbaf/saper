@@ -15,7 +15,7 @@ struct GameOverView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
-                Text(gameState.gameMode == .hardcore ? "GAME OVER" : "TIME'S UP")
+                Text(gameState.gameMode == .timed ? "TIME'S UP" : "GAME OVER")
                     .font(.system(size: 32, weight: .black, design: .monospaced))
                     .foregroundStyle(
                         gameState.gameMode == .hardcore
@@ -27,6 +27,9 @@ struct GameOverView: View {
                     ResultRow(icon: "checkmark.seal.fill", label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)", color: theme.accentColor)
                     ResultRow(icon: "square.grid.3x3.fill", label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)", color: .blue)
                     ResultRow(icon: "diamond.fill", label: "Gems Collected", value: "\(gameState.gemsCollectedThisSession)", color: theme.accentColor)
+                    if gameState.gameMode == .endless {
+                        ResultRow(icon: "heart.fill", label: "Lives Lost", value: "\(3 - gameState.livesRemaining)", color: .pink)
+                    }
 
                     Divider().background(Color.white.opacity(0.2))
 

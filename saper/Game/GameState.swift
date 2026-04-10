@@ -21,6 +21,7 @@ class GameState: ObservableObject {
     // Per-run state — reset at the start of every run
     @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
     @Published var runPerks: [String: Int] = [:]     // RunPerk.rawValue → stacks
+    @Published var livesRemaining: Int = 3           // Endless mode only
 
     let boardManager: BoardManager
     let timerManager = TimerManager()
@@ -139,6 +140,12 @@ class GameState: ObservableObject {
                 if shields > 0 {
                     runPerks[RunPerk.mineShield.rawValue] = shields - 1
                 } else {
+                    isGameOver = true
+                }
+            } else if gameMode == .endless {
+                livesRemaining -= 1
+                if livesRemaining <= 0 {
+                    livesRemaining = 0
                     isGameOver = true
                 }
             }
@@ -361,6 +368,7 @@ class GameState: ObservableObject {
             BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
         ]
         runPerks = [:]
+        livesRemaining = 3
         focusedSector = SectorCoordinate(x: 0, y: 0)
 
         // Apply density shield prestige
