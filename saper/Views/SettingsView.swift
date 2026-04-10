@@ -23,16 +23,22 @@ struct SettingsView: View {
         NavigationView {
             List {
                 Section("Audio") {
-                    Toggle("Sound Effects", isOn: $gameState.profile.soundEnabled)
-                    if gameState.profile.soundEnabled {
-                        HStack {
-                            Text("SFX Volume")
-                            Slider(value: $gameState.profile.sfxVolume, in: 0...1)
-                        }
-                        HStack {
-                            Text("Ambience Volume")
-                            Slider(value: $gameState.profile.ambienceVolume, in: 0...1)
-                        }
+                    HStack(spacing: 12) {
+                        Label("Sound Effects", systemImage: "speaker.wave.2.fill")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: $gameState.profile.sfxVolume, in: 0...1)
+                            .onChange(of: gameState.profile.sfxVolume) { vol in
+                                AudioManager.shared.sfxVolume = vol
+                            }
+                    }
+                    HStack(spacing: 12) {
+                        Label("Music", systemImage: "music.note")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: $gameState.profile.ambienceVolume, in: 0...1)
+                            .onChange(of: gameState.profile.ambienceVolume) { vol in
+                                AudioManager.shared.ambienceVolume = vol
+                                MusicEngine.shared.outputVolume = vol * 0.35
+                            }
                     }
                 }
 

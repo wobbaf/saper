@@ -99,6 +99,10 @@ class GameState: ObservableObject {
 
         let sectorCoord = SectorCoordinate(fromTileX: globalX, tileY: globalY)
 
+        // Capture whether this is the sector's first tap before GameActions sets firstTapDone.
+        // If it is, ensureSafeFirstTap may relocate a mine, making neighbour border counts stale.
+        let wasFirstTap = boardManager.sector(at: sectorCoord)?.firstTapDone == false
+
         // Check if sector needs adjacent counts computed
         if let sector = boardManager.sector(at: sectorCoord), !sector.firstTapDone {
             boardManager.computeAdjacentCounts(for: sector)
@@ -136,6 +140,15 @@ class GameState: ObservableObject {
             }
 
             onTilesRevealed?(revealed)
+
+            // If this was the sector's first tap, ensureSafeFirstTap may have relocated a
+            // mine — refresh any already-revealed border tiles in neighbouring sectors.
+            if wasFirstTap {
+                let staleTiles = boardManager.recomputeRevealedBorderTiles(around: sectorCoord)
+                if !staleTiles.isEmpty {
+                    onTilesRevealed?(staleTiles)
+                }
+            }
 
             // Check sector completion for all affected sectors
             var checkedSectors: Set<SectorCoordinate> = []
