@@ -1,4 +1,17 @@
 import SpriteKit
+import SwiftUI
+
+// MARK: - UI Theme
+
+struct SkinUITheme {
+    let backgroundColors: [Color]
+    let titleColors: [Color]
+    let accentColor: Color
+    let secondaryColor: Color
+    let showStarfield: Bool
+    let cardBackground: Color
+    let buttonBackground: Color
+}
 
 enum SkinType: String, Codable, CaseIterable {
     case space
@@ -76,6 +89,53 @@ enum SkinType: String, Codable, CaseIterable {
         switch self {
         case .space, .neonGrid: return true
         case .minecraft:        return false
+        }
+    }
+
+    var uiTheme: SkinUITheme {
+        switch self {
+        case .space:
+            return SkinUITheme(
+                backgroundColors: [
+                    Color(red: 0.02, green: 0.02, blue: 0.08),
+                    Color(red: 0.05, green: 0.02, blue: 0.15),
+                    Color(red: 0.02, green: 0.02, blue: 0.08)
+                ],
+                titleColors: [.cyan, .purple, .cyan],
+                accentColor: .cyan,
+                secondaryColor: .purple,
+                showStarfield: true,
+                cardBackground: Color.white.opacity(0.08),
+                buttonBackground: Color.white.opacity(0.06)
+            )
+        case .neonGrid:
+            return SkinUITheme(
+                backgroundColors: [
+                    Color(red: 0.00, green: 0.00, blue: 0.00),
+                    Color(red: 0.01, green: 0.03, blue: 0.02),
+                    Color(red: 0.00, green: 0.00, blue: 0.00)
+                ],
+                titleColors: [Color(red: 0.0, green: 0.9, blue: 0.4), Color(red: 0.0, green: 0.7, blue: 1.0), Color(red: 0.0, green: 0.9, blue: 0.4)],
+                accentColor: Color(red: 0.0, green: 0.8, blue: 1.0),
+                secondaryColor: Color(red: 0.0, green: 0.9, blue: 0.4),
+                showStarfield: false,
+                cardBackground: Color.white.opacity(0.05),
+                buttonBackground: Color.white.opacity(0.04)
+            )
+        case .minecraft:
+            return SkinUITheme(
+                backgroundColors: [
+                    Color(red: 0.20, green: 0.13, blue: 0.05),
+                    Color(red: 0.28, green: 0.18, blue: 0.07),
+                    Color(red: 0.18, green: 0.11, blue: 0.04)
+                ],
+                titleColors: [Color(red: 0.85, green: 0.65, blue: 0.20), Color(red: 0.40, green: 0.72, blue: 0.18), Color(red: 0.85, green: 0.65, blue: 0.20)],
+                accentColor: Color(red: 0.40, green: 0.72, blue: 0.18),
+                secondaryColor: Color(red: 0.85, green: 0.65, blue: 0.20),
+                showStarfield: false,
+                cardBackground: Color(red: 0.15, green: 0.09, blue: 0.03).opacity(0.8),
+                buttonBackground: Color(red: 0.35, green: 0.22, blue: 0.08).opacity(0.5)
+            )
         }
     }
 }

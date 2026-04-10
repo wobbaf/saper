@@ -16,15 +16,13 @@ struct MainMenuView: View {
 
     private var isDark: Bool { colorScheme == .dark }
 
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
+
     var body: some View {
         ZStack {
             // Background
             LinearGradient(
-                colors: isDark ? [
-                    Color(red: 0.02, green: 0.02, blue: 0.08),
-                    Color(red: 0.05, green: 0.02, blue: 0.15),
-                    Color(red: 0.02, green: 0.02, blue: 0.08)
-                ] : [
+                colors: isDark ? theme.backgroundColors : [
                     Color(red: 0.92, green: 0.93, blue: 0.96),
                     Color(red: 0.85, green: 0.87, blue: 0.95),
                     Color(red: 0.92, green: 0.93, blue: 0.96)
@@ -34,8 +32,7 @@ struct MainMenuView: View {
             )
             .ignoresSafeArea()
 
-            // Animated stars (dark mode only)
-            if isDark {
+            if isDark && theme.showStarfield {
                 StarFieldBackgroundView()
             }
 
@@ -45,17 +42,10 @@ struct MainMenuView: View {
                 // Title
                 VStack(spacing: 8) {
                     ZStack {
-                        // Neon glow bloom — blurred copy behind the title
                         if isDark {
                             Text("MINESWEEPER")
                                 .font(.system(size: 36, weight: .black, design: .monospaced))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.cyan, .purple, .cyan],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
                                 .blur(radius: titleGlowPhase ? 14 : 8)
                                 .opacity(titleGlowPhase ? 0.65 : 0.35)
                         }
@@ -64,7 +54,7 @@ struct MainMenuView: View {
                             .font(.system(size: 36, weight: .black, design: .monospaced))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: isDark ? [.cyan, .purple, .cyan] : [.blue, .purple, .blue],
+                                    colors: isDark ? theme.titleColors : [.blue, .purple, .blue],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -81,71 +71,22 @@ struct MainMenuView: View {
 
                 // Game mode buttons
                 VStack(spacing: 16) {
-                    // Classic mode (first)
                     Button(action: onClassicMode) {
-                        HStack {
-                            Image(systemName: "square.grid.3x3.topleft.filled")
-                                .font(.system(size: 20))
-                                .frame(width: 30)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Classic")
-                                    .font(.system(size: 18, weight: .bold, design: .monospaced))
-                                Text("Windows-style Minesweeper")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
-                            }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14))
-                                .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.5))
-                        }
-                        .foregroundColor(isDark ? .white : .primary)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
+                        modeRow(
+                            icon: "square.grid.3x3.topleft.filled",
+                            title: "Classic",
+                            subtitle: "Windows-style Minesweeper",
+                            borderColor: Color.gray.opacity(0.3)
                         )
                     }
 
                     ForEach(GameMode.allCases, id: \.self) { mode in
                         Button(action: { startGame(mode: mode) }) {
-                            HStack {
-                                Image(systemName: iconForMode(mode))
-                                    .font(.system(size: 20))
-                                    .frame(width: 30)
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(mode.displayName)
-                                        .font(.system(size: 18, weight: .bold, design: .monospaced))
-                                    Text(mode.description)
-                                        .font(.system(size: 11))
-                                        .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.5))
-                            }
-                            .foregroundColor(isDark ? .white : .primary)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.04))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(borderColorForMode(mode), lineWidth: 1)
-                                    )
+                            modeRow(
+                                icon: iconForMode(mode),
+                                title: mode.displayName,
+                                subtitle: mode.description,
+                                borderColor: borderColorForMode(mode)
                             )
                         }
                     }
@@ -156,53 +97,18 @@ struct MainMenuView: View {
 
                 // Stats bar
                 HStack(spacing: 20) {
-                    StatBadge(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: .cyan)
-                    StatBadge(icon: "star.fill", value: "Lv.\(gameState.profile.level)", color: .yellow)
-                    StatBadge(icon: "trophy.fill", value: "\(gameState.profile.totalSectorsSolved)", color: .orange)
+                    StatBadge(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: theme.accentColor, cardBg: theme.cardBackground)
+                    StatBadge(icon: "star.fill", value: "Lv.\(gameState.profile.level)", color: .yellow, cardBg: theme.cardBackground)
+                    StatBadge(icon: "trophy.fill", value: "\(gameState.profile.totalSectorsSolved)", color: .orange, cardBg: theme.cardBackground)
                 }
                 .padding(.bottom, 20)
 
                 // Bottom buttons
                 HStack(spacing: 30) {
-                    Button(action: { showSettings = true }) {
-                        VStack(spacing: 4) {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 22))
-                            Text("Settings")
-                                .font(.system(size: 10))
-                        }
-                        .foregroundColor(isDark ? .white.opacity(0.6) : .secondary)
-                    }
-
-                    Button(action: { showLeaderboard = true }) {
-                        VStack(spacing: 4) {
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 22))
-                            Text("Scores")
-                                .font(.system(size: 10))
-                        }
-                        .foregroundColor(isDark ? .white.opacity(0.6) : .secondary)
-                    }
-
-                    Button(action: { showSkinPicker = true }) {
-                        VStack(spacing: 4) {
-                            Image(systemName: "paintbrush.fill")
-                                .font(.system(size: 22))
-                            Text("Skins")
-                                .font(.system(size: 10))
-                        }
-                        .foregroundColor(isDark ? .white.opacity(0.6) : .secondary)
-                    }
-
-                    Button(action: { showShop = true }) {
-                        VStack(spacing: 4) {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 22))
-                            Text("Upgrades")
-                                .font(.system(size: 10))
-                        }
-                        .foregroundColor(isDark ? .cyan.opacity(0.8) : .cyan)
-                    }
+                    iconButton(icon: "gearshape.fill", label: "Settings", action: { showSettings = true })
+                    iconButton(icon: "trophy.fill", label: "Scores", action: { showLeaderboard = true })
+                    iconButton(icon: "paintbrush.fill", label: "Skins", action: { showSkinPicker = true })
+                    iconButton(icon: "arrow.up.circle.fill", label: "Upgrades", action: { showShop = true }, accent: true)
                 }
                 .padding(.bottom, 30)
             }
@@ -248,6 +154,48 @@ struct MainMenuView: View {
         }
     }
 
+    @ViewBuilder
+    private func modeRow(icon: String, title: String, subtitle: String, borderColor: Color) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .frame(width: 30)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14))
+                .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.5))
+        }
+        .foregroundColor(isDark ? .white : .primary)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(theme.buttonBackground)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(borderColor, lineWidth: 1))
+        )
+    }
+
+    @ViewBuilder
+    private func iconButton(icon: String, label: String, action: @escaping () -> Void, accent: Bool = false) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon).font(.system(size: 22))
+                Text(label).font(.system(size: 10))
+            }
+            .foregroundColor(accent ? theme.accentColor : (isDark ? .white.opacity(0.6) : .secondary))
+        }
+    }
+
     private func iconForMode(_ mode: GameMode) -> String {
         switch mode {
         case .endless: return "infinity"
@@ -258,9 +206,9 @@ struct MainMenuView: View {
 
     private func borderColorForMode(_ mode: GameMode) -> Color {
         switch mode {
-        case .endless: return .cyan.opacity(0.3)
-        case .hardcore: return .red.opacity(0.3)
-        case .timed: return .orange.opacity(0.3)
+        case .endless: return theme.accentColor.opacity(0.4)
+        case .hardcore: return .red.opacity(0.35)
+        case .timed: return .orange.opacity(0.35)
         }
     }
 }
@@ -269,6 +217,7 @@ struct StatBadge: View {
     let icon: String
     let value: String
     let color: Color
+    var cardBg: Color = Color.white.opacity(0.08)
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -282,7 +231,7 @@ struct StatBadge: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06))
+        .background(colorScheme == .dark ? cardBg : Color.black.opacity(0.06))
         .cornerRadius(8)
     }
 }
