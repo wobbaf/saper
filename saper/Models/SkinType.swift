@@ -21,12 +21,12 @@ enum SkinType: String, Codable, CaseIterable {
         }
     }
 
-    /// Dirt body colour (grass stripe rendered separately in TileRenderer)
+    /// Grass green top for Minecraft, base colour for other skins
     var hiddenTileColor: SKColor {
         switch self {
         case .space:     return SKColor(red: 0.12, green: 0.12, blue: 0.22, alpha: 1)
         case .neonGrid:  return SKColor(red: 0.08, green: 0.08, blue: 0.08, alpha: 1)
-        case .minecraft: return SKColor(red: 0.53, green: 0.35, blue: 0.14, alpha: 1) // dirt
+        case .minecraft: return SKColor(red: 0.40, green: 0.62, blue: 0.18, alpha: 1) // grass top
         }
     }
 
@@ -34,7 +34,7 @@ enum SkinType: String, Codable, CaseIterable {
         switch self {
         case .space:     return SKColor(red: 0.25, green: 0.25, blue: 0.45, alpha: 1)
         case .neonGrid:  return SKColor(red: 0.0,  green: 0.8,  blue: 1.0,  alpha: 0.6)
-        case .minecraft: return SKColor(red: 0.28, green: 0.17, blue: 0.05, alpha: 1) // dark dirt
+        case .minecraft: return SKColor(red: 0.15, green: 0.35, blue: 0.05, alpha: 1) // dark grass edge
         }
     }
 

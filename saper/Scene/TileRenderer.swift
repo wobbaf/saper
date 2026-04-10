@@ -64,20 +64,29 @@ class TileRenderer {
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: cr)
         bg.fillColor = skin.hiddenTileColor
         bg.strokeColor = skin.hiddenTileBorderColor
-        bg.lineWidth = skin == .minecraft ? 2 : 1
+        bg.lineWidth = skin == .minecraft ? 1 : 1
         bg.position = center
         container.addChild(bg)
 
         if skin == .minecraft {
-            // Grass strip across the top (~25% of tile height)
-            let grassH: CGFloat = (size.height - 2) * 0.25
-            let grass = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: grassH), cornerRadius: 0)
-            grass.fillColor = SKColor(red: 0.29, green: 0.60, blue: 0.05, alpha: 1)
-            grass.strokeColor = .clear
-            grass.position = CGPoint(x: center.x, y: size.height - 1 - grassH / 2)
-            container.addChild(grass)
+            // Top-down grass block: scatter darker green pixel marks across surface
+            let dark = SKColor(red: 0.22, green: 0.50, blue: 0.04, alpha: 1)
+            let px: CGFloat = 5
+            // Fixed pattern mimicking Minecraft grass texture pixel clusters
+            let offsets: [(CGFloat, CGFloat)] = [
+                (6, 6), (14, 10), (28, 7), (36, 14),
+                (8, 26), (20, 32), (32, 28), (38, 36),
+                (12, 18), (24, 22), (16, 38), (34, 20)
+            ]
+            for (ox, oy) in offsets {
+                let dot = SKShapeNode(rectOf: CGSize(width: px, height: px))
+                dot.fillColor = dark
+                dot.strokeColor = .clear
+                dot.position = CGPoint(x: ox + px / 2, y: oy + px / 2)
+                container.addChild(dot)
+            }
         } else {
-            // Subtle inner highlight (non-Minecraft only)
+            // Subtle inner highlight
             let highlight = SKShapeNode(rectOf: CGSize(width: size.width - 8, height: size.height - 8), cornerRadius: 2)
             highlight.fillColor = SKColor(white: 1.0, alpha: 0.03)
             highlight.strokeColor = .clear
@@ -103,18 +112,20 @@ class TileRenderer {
             let color = SKColor.numberColor(for: number)
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
-            // Three-layer neon glow — intensity scales with number value
-            let glowStrength = CGFloat(0.12 + Float(number) * 0.055)
-            let glowLayers: [(CGFloat, CGFloat)] = [(42, 0.55), (56, 0.28), (70, 0.11)]
-            for (fontSize, alphaScale) in glowLayers {
-                let halo = SKLabelNode(text: "\(number)")
-                halo.fontName = "Menlo-Bold"
-                halo.fontSize = fontSize
-                halo.fontColor = color.withAlphaComponent(glowStrength * alphaScale)
-                halo.verticalAlignmentMode = .center
-                halo.horizontalAlignmentMode = .center
-                halo.position = center
-                container.addChild(halo)
+            if skin != .minecraft {
+                // Three-layer neon glow — intensity scales with number value
+                let glowStrength = CGFloat(0.12 + Float(number) * 0.055)
+                let glowLayers: [(CGFloat, CGFloat)] = [(42, 0.55), (56, 0.28), (70, 0.11)]
+                for (fontSize, alphaScale) in glowLayers {
+                    let halo = SKLabelNode(text: "\(number)")
+                    halo.fontName = "Menlo-Bold"
+                    halo.fontSize = fontSize
+                    halo.fontColor = color.withAlphaComponent(glowStrength * alphaScale)
+                    halo.verticalAlignmentMode = .center
+                    halo.horizontalAlignmentMode = .center
+                    halo.position = center
+                    container.addChild(halo)
+                }
             }
 
             // Sharp foreground label
@@ -133,6 +144,10 @@ class TileRenderer {
 
     private func createMineTile(size: CGSize) -> SKNode {
         let container = SKNode()
+
+        if skin == .minecraft {
+            return createCreeperTile(size: size)
+        }
 
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 2)
         bg.fillColor = SKColor(red: 0.3, green: 0.0, blue: 0.0, alpha: 1)
@@ -161,6 +176,57 @@ class TileRenderer {
             spike.zRotation = CGFloat(angle)
             container.addChild(spike)
         }
+
+        return container
+    }
+
+    /// Creeper face tile for Minecraft skin mine.
+    private func createCreeperTile(size: CGSize) -> SKNode {
+        let container = SKNode()
+
+        // Background: Minecraft creeper green
+        let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 0)
+        bg.fillColor = SKColor(red: 0.40, green: 0.62, blue: 0.18, alpha: 1)
+        bg.strokeColor = SKColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
+        bg.lineWidth = 1
+        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        container.addChild(bg)
+
+        let black = SKColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
+        let px: CGFloat = 7  // pixel size
+
+        // Helper: add a pixel square
+        func pixel(x: CGFloat, y: CGFloat) {
+            let sq = SKShapeNode(rectOf: CGSize(width: px, height: px))
+            sq.fillColor = black
+            sq.strokeColor = .clear
+            // y is from top: convert to SpriteKit bottom-origin coords
+            sq.position = CGPoint(x: x + px / 2, y: size.height - y - px / 2)
+            container.addChild(sq)
+        }
+
+        // Eyes: two 2×2 pixel squares side by side in upper half
+        // Left eye at col 1-2, row 1-2  (pixel grid offset from edge ~6px)
+        let ex1: CGFloat = 7,  ex2: CGFloat = 22  // left/right eye x
+        let ey: CGFloat = 8                         // eye row y (from top)
+        pixel(x: ex1,      y: ey);      pixel(x: ex1 + px,  y: ey)
+        pixel(x: ex1,      y: ey + px); pixel(x: ex1 + px,  y: ey + px)
+        pixel(x: ex2,      y: ey);      pixel(x: ex2 + px,  y: ey)
+        pixel(x: ex2,      y: ey + px); pixel(x: ex2 + px,  y: ey + px)
+
+        // Nose: 2×1 center below eyes
+        let nx: CGFloat = 17, ny: CGFloat = 22
+        pixel(x: nx, y: ny); pixel(x: nx + px, y: ny)
+
+        // Mouth: classic creeper jagged mouth
+        //  ██████
+        //  ██  ██
+        //    ████
+        let my: CGFloat = 29
+        pixel(x: 7,  y: my);     pixel(x: 14, y: my);
+        pixel(x: 21, y: my);     pixel(x: 28, y: my)
+        pixel(x: 7,  y: my + px);                     pixel(x: 28, y: my + px)
+        pixel(x: 14, y: my + px * 2); pixel(x: 21, y: my + px * 2)
 
         return container
     }
