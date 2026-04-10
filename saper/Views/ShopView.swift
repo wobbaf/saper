@@ -19,18 +19,19 @@ struct ShopView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var isDark: Bool { colorScheme == .dark }
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         NavigationView {
             ZStack {
-                (isDark ? Color(red: 0.07, green: 0.07, blue: 0.12) : Color(red: 0.95, green: 0.95, blue: 0.98))
+                (isDark ? theme.backgroundColors[0] : Color(red: 0.95, green: 0.95, blue: 0.98))
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Gem balance banner
                     HStack(spacing: 8) {
                         Image(systemName: "diamond.fill")
-                            .foregroundColor(.cyan)
+                            .foregroundColor(theme.accentColor)
                             .font(.system(size: 18))
                         Text("\(gameState.profile.gems) gems")
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
@@ -38,12 +39,12 @@ struct ShopView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+                    .background(isDark ? theme.cardBackground : Color.black.opacity(0.04))
 
                     ScrollView {
                         VStack(spacing: 14) {
                             ForEach(shopItems, id: \.booster.rawValue) { item in
-                                ShopRow(item: item, gameState: gameState, isDark: isDark)
+                                ShopRow(item: item, gameState: gameState, isDark: isDark, theme: theme)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -67,6 +68,7 @@ private struct ShopRow: View {
     let item: ShopItem
     @ObservedObject var gameState: GameState
     let isDark: Bool
+    let theme: SkinUITheme
 
     /// During a run show the live run count; on the menu show the profile stock.
     private var count: Int {
@@ -134,7 +136,7 @@ private struct ShopRow: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.03))
+                .fill(isDark ? theme.cardBackground : Color.black.opacity(0.03))
         )
     }
 

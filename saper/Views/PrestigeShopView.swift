@@ -9,19 +9,19 @@ struct PrestigeShopView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var isDark: Bool { colorScheme == .dark }
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         NavigationView {
             ZStack {
-                (isDark ? Color(red: 0.05, green: 0.03, blue: 0.12)
-                        : Color(red: 0.95, green: 0.95, blue: 0.98))
+                (isDark ? theme.backgroundColors[0] : Color(red: 0.95, green: 0.95, blue: 0.98))
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Gem balance banner
                     HStack(spacing: 8) {
                         Image(systemName: "diamond.fill")
-                            .foregroundColor(.cyan)
+                            .foregroundColor(theme.accentColor)
                             .font(.system(size: 18))
                         Text("\(gameState.profile.gems) gems")
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
@@ -29,7 +29,7 @@ struct PrestigeShopView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+                    .background(isDark ? theme.cardBackground : Color.black.opacity(0.04))
 
                     Text("Upgrades are permanent and apply to every run.")
                         .font(.system(size: 12))
@@ -40,7 +40,7 @@ struct PrestigeShopView: View {
                     ScrollView {
                         VStack(spacing: 14) {
                             ForEach(PrestigeUpgrade.allCases, id: \.rawValue) { upgrade in
-                                PrestigeRow(upgrade: upgrade, gameState: gameState, isDark: isDark)
+                                PrestigeRow(upgrade: upgrade, gameState: gameState, isDark: isDark, theme: theme)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -64,6 +64,7 @@ private struct PrestigeRow: View {
     let upgrade: PrestigeUpgrade
     @ObservedObject var gameState: GameState
     let isDark: Bool
+    let theme: SkinUITheme
 
     private var currentLevel: Int { gameState.profile.prestigeLevel(for: upgrade) }
     private var nextCost: Int? { upgrade.costForNextLevel(current: currentLevel) }
@@ -136,9 +137,7 @@ private struct PrestigeRow: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(isDark
-                      ? upgrade.color.opacity(isMaxed ? 0.08 : 0.04)
-                      : Color.black.opacity(0.03))
+                .fill(isDark ? theme.cardBackground : Color.black.opacity(0.03))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(upgrade.color.opacity(isMaxed ? 0.4 : 0.15), lineWidth: 1)

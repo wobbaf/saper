@@ -83,7 +83,7 @@ struct GameOverView: View {
             .padding(30)
         }
         .sheet(isPresented: $showLeaderboard) {
-            LeaderboardView()
+            LeaderboardView(gameState: gameState)
         }
     }
 
