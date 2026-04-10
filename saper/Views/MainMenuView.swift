@@ -10,6 +10,7 @@ struct MainMenuView: View {
     @State private var showLeaderboard = false
     @State private var showShop = false
     @State private var animateTitle = false
+    @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
     @State private var showResumeAlert = false
 
@@ -43,16 +44,33 @@ struct MainMenuView: View {
 
                 // Title
                 VStack(spacing: 8) {
-                    Text("MINESWEEPER")
-                        .font(.system(size: 36, weight: .black, design: .monospaced))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: isDark ? [.cyan, .purple, .cyan] : [.blue, .purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    ZStack {
+                        // Neon glow bloom — blurred copy behind the title
+                        if isDark {
+                            Text("MINESWEEPER")
+                                .font(.system(size: 36, weight: .black, design: .monospaced))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.cyan, .purple, .cyan],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .blur(radius: titleGlowPhase ? 14 : 8)
+                                .opacity(titleGlowPhase ? 0.65 : 0.35)
+                        }
+
+                        Text("MINESWEEPER")
+                            .font(.system(size: 36, weight: .black, design: .monospaced))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: isDark ? [.cyan, .purple, .cyan] : [.blue, .purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .opacity(animateTitle ? 1.0 : 0.7)
+                            .opacity(animateTitle ? 1.0 : 0.7)
+                    }
 
                     Text("I N F I N I T Y")
                         .font(.system(size: 20, weight: .light, design: .monospaced))
@@ -204,6 +222,9 @@ struct MainMenuView: View {
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 animateTitle = true
+            }
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
+                titleGlowPhase = true
             }
         }
         .alert("Resume Game?", isPresented: $showResumeAlert, presenting: pendingMode) { mode in

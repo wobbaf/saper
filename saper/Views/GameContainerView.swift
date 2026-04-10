@@ -1,6 +1,24 @@
 import SwiftUI
 import SpriteKit
 
+/// Scanline CRT overlay — a canvas of thin horizontal lines at 4px spacing.
+private struct ScanlineOverlayView: View {
+    var body: some View {
+        Canvas { context, size in
+            var y: CGFloat = 0
+            while y < size.height {
+                context.fill(
+                    Path(CGRect(x: 0, y: y, width: size.width, height: 1)),
+                    with: .color(.black.opacity(0.06))
+                )
+                y += 4
+            }
+        }
+        .allowsHitTesting(false)
+        .ignoresSafeArea()
+    }
+}
+
 /// Hosts the SpriteKit game scene with a SwiftUI HUD overlay.
 struct GameContainerView: View {
     @ObservedObject var gameState: GameState
@@ -23,6 +41,8 @@ struct GameContainerView: View {
                 Color.black
                     .ignoresSafeArea()
             }
+
+            ScanlineOverlayView()
 
             HUDOverlayView(gameState: gameState)
 
