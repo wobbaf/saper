@@ -68,12 +68,12 @@ enum PrestigeUpgrade: String, CaseIterable {
     /// Gem cost for each level (index 0 = buying level 1, etc.)
     var levelCosts: [Int] {
         switch self {
-        case .headstart:     return [20, 40, 70]
-        case .scholar:       return [50, 100]
-        case .prospector:    return [30, 60, 100]
-        case .densityShield: return [40, 80, 130]
-        case .extraChoice:   return [80]
-        case .extraHearts:   return [60, 120]
+        case .headstart:     return [75, 150, 250]
+        case .scholar:       return [200, 400]
+        case .prospector:    return [100, 200, 350]
+        case .densityShield: return [150, 300, 500]
+        case .extraChoice:   return [300]
+        case .extraHearts:   return [250, 500]
         }
     }
 

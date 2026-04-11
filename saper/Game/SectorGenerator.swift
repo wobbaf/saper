@@ -19,13 +19,13 @@ struct SectorGenerator {
             }
         }
 
-        // Gem reward (~15% chance)
+        // Gem reward: always 1 base gem, +5-10 bonus on ~15% of sectors
         let gemRoll = Double(rng.nextInt(upperBound: 10000)) / 10000.0
         let gemReward: Int
         if gemRoll < Constants.gemSectorChance {
-            gemReward = Constants.gemMinPerSector + rng.nextInt(upperBound: Constants.gemMaxPerSector - Constants.gemMinPerSector + 1)
+            gemReward = 1 + 5 + rng.nextInt(upperBound: 6) // 6–11 gems
         } else {
-            gemReward = 0
+            gemReward = 1
         }
 
         // Scatter tile gems: ~2.5% chance per non-mine tile

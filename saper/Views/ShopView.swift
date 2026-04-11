@@ -7,9 +7,9 @@ private struct ShopItem {
 }
 
 private let shopItems: [ShopItem] = [
-    ShopItem(booster: .revealOne,    price: 8,  color: .yellow),
-    ShopItem(booster: .solveSector,  price: 15, color: .purple),
-    ShopItem(booster: .undoMine,     price: 6,  color: .orange),
+    ShopItem(booster: .revealOne,    price: 30,  color: .yellow),
+    ShopItem(booster: .solveSector,  price: 60, color: .purple),
+    ShopItem(booster: .undoMine,     price: 25,  color: .orange),
 ]
 
 /// Gem shop — buy boosters with gems. Purchases are permanent (added to base stock).

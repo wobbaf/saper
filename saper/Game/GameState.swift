@@ -34,7 +34,7 @@ class GameState: ObservableObject {
     var onSectorStatusChanged: ((SectorCoordinate, SectorStatus) -> Void)?
     var onTilesRevealed: (([FloodFill.TilePosition]) -> Void)?
     var onTileStateChanged: ((Int, Int, TileState) -> Void)?
-    var onGemCollected: ((Int) -> Void)?
+    var onGemCollected: ((Int, SectorCoordinate) -> Void)?
     var onMineHit: ((SectorCoordinate) -> Void)?
     var onSectorSolved: ((SectorCoordinate) -> Void)?
     var onSectorReset: ((SectorCoordinate) -> Void)?
@@ -468,14 +468,17 @@ class GameState: ObservableObject {
             if let sector = boardManager.sector(at: coord),
                sector.gemReward > 0 && !sector.gemCollected {
                 sector.gemCollected = true
-                let reward = sector.gemReward
+                let baseReward = sector.gemReward
+                let prospectorBonus = profile.prospectorLevel
+                let gemMagnetBonus = perkStacks(.gemMagnet)
+                let reward = baseReward + prospectorBonus + gemMagnetBonus
                 profile.gems += reward
                 profile.totalGemsCollected += reward
                 gemsCollectedThisSession += reward
                 let _ = profile.addXP(Int(Double(reward * Constants.xpPerGemFind) * xpMultiplier))
                 AudioManager.shared.playCompound(SoundEffect.gemChime)
                 HapticsManager.shared.play(.gemCollected)
-                onGemCollected?(reward)
+                onGemCollected?(reward, coord)
             }
 
             // Update high scores
