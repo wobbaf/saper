@@ -6,25 +6,30 @@ struct HUDOverlayView: View {
     var onShopTapped: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 0) {
-            topPill
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
+        ZStack(alignment: .top) {
+            // Non-interactive background shapes for layout
+            VStack(spacing: 0) {
+                topPillBackground
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
 
-            xpBar
-                .padding(.horizontal, 16)
-                .padding(.top, 5)
+                xpBar
+                    .padding(.horizontal, 16)
+                    .padding(.top, 5)
 
-            Spacer()
-        }
-        .allowsHitTesting(false)
-        // Re-enable hit testing only on the interactive pill
-        .overlay(alignment: .top) {
-            interactivePill
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-        }
-        .overlay {
+                Spacer()
+            }
+            .allowsHitTesting(false)
+
+            // Interactive top pill
+            VStack(spacing: 0) {
+                interactiveTopPill
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                Spacer()
+            }
+
+            // Hardcore vignette
             if gameState.gameMode == .hardcore {
                 Rectangle()
                     .fill(
@@ -39,32 +44,50 @@ struct HUDOverlayView: View {
                     .allowsHitTesting(false)
             }
         }
+        // Bottom booster pill pinned to safe area bottom
+        .overlay(alignment: .bottom) {
+            interactiveBottomPill
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+        }
     }
 
-    // MARK: - Non-interactive pill (stats only, for layout/background)
+    // MARK: - Top pill
 
-    private var topPill: some View {
+    private var topPillBackground: some View {
         pillBackground {
             HStack(spacing: 0) {
                 statsSection
                 pillDivider
-                boosterSection
+                actionSection
             }
         }
         .allowsHitTesting(false)
     }
 
-    // MARK: - Interactive overlay (same shape, all buttons active)
-
-    private var interactivePill: some View {
+    private var interactiveTopPill: some View {
         pillBackground {
             HStack(spacing: 0) {
                 statsSection.allowsHitTesting(false)
                 pillDivider.allowsHitTesting(false)
-                boosterSection
+                actionSection
             }
         }
     }
+
+    // MARK: - Bottom booster pill
+
+    private var interactiveBottomPill: some View {
+        pillBackground {
+            HStack(spacing: 0) {
+                boosterButton(icon: "eye.fill",             count: gameState.revealOneAvailable,   color: .yellow, action: useRevealOne)
+                boosterButton(icon: "checkmark.seal.fill",  count: gameState.solveSectorAvailable, color: .purple, action: useSolveSector)
+                boosterButton(icon: "arrow.uturn.backward", count: gameState.undoMineAvailable,    color: .orange, action: useUndoMine)
+            }
+        }
+    }
+
+    // MARK: - Shared pill background
 
     @ViewBuilder
     private func pillBackground<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -81,12 +104,11 @@ struct HUDOverlayView: View {
             )
     }
 
-    // MARK: - Stats section (gems · sectors · timer)
+    // MARK: - Stats section (gems · sectors · lives/timer)
 
     private var statsSection: some View {
         HStack(spacing: 14) {
             statItem(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: .cyan)
-
             statItem(icon: "checkmark.seal.fill", value: "\(gameState.sectorsSolvedThisSession)", color: .green)
 
             if gameState.gameMode == .endless {
@@ -125,23 +147,26 @@ struct HUDOverlayView: View {
             .padding(.horizontal, 10)
     }
 
-    // MARK: - Booster + action section
+    // MARK: - Action section (shop · pause)
 
-    private var boosterSection: some View {
+    private var actionSection: some View {
         HStack(spacing: 0) {
-            boosterButton(icon: "eye.fill",              count: gameState.revealOneAvailable,    color: .yellow, action: useRevealOne)
-            boosterButton(icon: "checkmark.seal.fill",   count: gameState.solveSectorAvailable,  color: .purple, action: useSolveSector)
-            boosterButton(icon: "arrow.uturn.backward",  count: gameState.undoMineAvailable,     color: .orange, action: useUndoMine)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.15))
-                .frame(width: 1, height: 22)
-                .padding(.horizontal, 8)
-
             actionButton(icon: "bag.fill",   color: .cyan,  action: onShopTapped)
             actionButton(icon: "pause.fill", color: .white, action: { gameState.pauseGame() })
         }
     }
+
+    private func actionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 15))
+                .foregroundColor(color)
+                .frame(width: 36, height: 36)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Booster button
 
     private func boosterButton(icon: String, count: Int, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -152,19 +177,9 @@ struct HUDOverlayView: View {
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
             }
             .foregroundColor(count > 0 ? color : color.opacity(0.35))
-            .frame(minWidth: 44, minHeight: 36)
+            .frame(minWidth: 52, minHeight: 36)
         }
         .disabled(count <= 0)
-        .buttonStyle(.plain)
-    }
-
-    private func actionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 15))
-                .foregroundColor(color)
-                .frame(width: 36, height: 36)
-        }
         .buttonStyle(.plain)
     }
 
