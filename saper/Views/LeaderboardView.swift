@@ -15,12 +15,13 @@ private let leaderboardTabs: [LeaderboardTab] = [
     LeaderboardTab(id: "classic_expert", label: "Classic E", icon: "square.grid.3x3"),
 ]
 
-/// Local leaderboard view showing scores across all modes.
+/// Local leaderboard view showing scores across all modes, plus achievements.
 struct LeaderboardView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab: String = "endless"
+    @State private var showAchievements = false
 
     private var isDark: Bool { colorScheme == .dark }
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
@@ -76,13 +77,25 @@ struct LeaderboardView: View {
                     }
                 }
             }
-            .navigationTitle("Leaderboard")
+            .navigationTitle("Scores")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showAchievements = true
+                    } label: {
+                        Label("Medals", systemImage: "medal.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(isDark ? .yellow : .orange)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                         .foregroundColor(isDark ? theme.accentColor : .blue)
                 }
+            }
+            .sheet(isPresented: $showAchievements) {
+                AchievementListView(gameState: gameState)
             }
         }
     }

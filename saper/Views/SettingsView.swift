@@ -5,6 +5,7 @@ struct SettingsView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
     @State private var showResetSaveConfirmation = false
+    @State private var showSkinPicker = false
 
     // Developer mode — only available in Debug and TestFlight builds
     @AppStorage("devModeEnabled") private var devModeEnabled = false
@@ -22,6 +23,23 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
+                Section("Appearance") {
+                    Button {
+                        showSkinPicker = true
+                    } label: {
+                        HStack {
+                            Label("Skins", systemImage: "paintbrush.fill")
+                            Spacer()
+                            Text(gameState.profile.currentSkin.displayName)
+                                .foregroundColor(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .foregroundColor(.primary)
+                }
+
                 Section("Audio") {
                     HStack(spacing: 12) {
                         Label("Sound Effects", systemImage: "speaker.wave.2.fill")
@@ -204,6 +222,9 @@ struct SettingsView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Your saved board will be permanently deleted.")
+            }
+            .sheet(isPresented: $showSkinPicker) {
+                SkinPickerView(gameState: gameState)
             }
         }
     }

@@ -158,7 +158,7 @@ class GameState: ObservableObject {
 
             onTilesRevealed?(revealed)
 
-            // Collect gems from revealed tiles
+            // Tile gems + piggy bank tiles
             for pos in revealed {
                 let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
                 guard let sector = boardManager.sector(at: sc) else { continue }
@@ -166,7 +166,7 @@ class GameState: ObservableObject {
                 let ly = pos.globalY - sc.originTileY
                 guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { continue }
                 // Tile gem
-                if !sector.tiles[ly][lx].gemCollected && sector.tiles[ly][lx].hasGem {
+                if sector.tiles[ly][lx].hasGem && !sector.tiles[ly][lx].gemCollected {
                     sector.tiles[ly][lx].gemCollected = true
                     let amount = 1
                     profile.gems += amount
@@ -439,16 +439,18 @@ class GameState: ObservableObject {
             MusicEngine.shared.triggerLevelUp()
         }
 
-        // Collect sector gem reward (base amount only, no modifiers)
+        // Collect sector gem reward
         if let sector = boardManager.sector(at: coord),
            sector.gemReward > 0 && !sector.gemCollected {
             sector.gemCollected = true
-            profile.gems += sector.gemReward
-            gemsCollectedThisSession += sector.gemReward
-            let _ = profile.addXP(Int(Double(sector.gemReward * Constants.xpPerGemFind) * xpMultiplier))
+            let reward = sector.gemReward
+            profile.gems += reward
+            profile.totalGemsCollected += reward
+            gemsCollectedThisSession += reward
+            let _ = profile.addXP(Int(Double(reward * Constants.xpPerGemFind) * xpMultiplier))
             AudioManager.shared.playCompound(SoundEffect.gemChime)
             HapticsManager.shared.play(.gemCollected)
-            onGemCollected?(sector.gemReward)
+            onGemCollected?(reward)
         }
 
         // Update high scores (not in practice mode)

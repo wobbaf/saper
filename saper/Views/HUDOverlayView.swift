@@ -20,12 +20,12 @@ struct HUDOverlayView: View {
         ZStack(alignment: .top) {
             // Non-interactive background shapes for layout
             VStack(spacing: 0) {
-                topPillBackground
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-
                 xpBar
                     .padding(.horizontal, 16)
+                    .padding(.top, 8)
+
+                topPillBackground
+                    .padding(.horizontal, 12)
                     .padding(.top, 5)
 
                 Spacer()
@@ -34,9 +34,9 @@ struct HUDOverlayView: View {
 
             // Interactive top pill
             VStack(spacing: 0) {
+                Spacer().frame(height: 8 + 16 + 5) // xpBar height offset
                 interactiveTopPill
                     .padding(.horizontal, 12)
-                    .padding(.top, 8)
                 Spacer()
             }
 

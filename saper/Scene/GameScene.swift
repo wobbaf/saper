@@ -228,15 +228,12 @@ class GameScene: SKScene {
     }
 
     /// Create SectorNodes for loaded sectors that don't have visual nodes yet.
-    /// Only create nodes within a reasonable visual radius.
-    /// Also applies fog-of-war alpha based on Chebyshev distance.
     private func syncSectorNodes() {
         let center = cameraController.centerSectorCoordinate()
         let visualRadius = Constants.loadRadius + 1
 
         for (coord, sector) in gameState.boardManager.sectors {
-            let dist = coord.chebyshevDistance(to: center)
-            if dist <= visualRadius {
+            if coord.chebyshevDistance(to: center) <= visualRadius {
                 if sectorNodes[coord] == nil {
                     let sectorNode = SectorNode(
                         coordinate: coord,
@@ -245,15 +242,11 @@ class GameScene: SKScene {
                     )
                     addChild(sectorNode)
                     sectorNodes[coord] = sectorNode
-                    // Show gem cost immediately for inactive sectors
                     if sector.status == .inactive {
                         let cost = gameState.unlockCost(for: coord)
                         sectorNode.updateOverlay(status: .inactive, gemCost: cost)
                     }
                 }
-                // Fog of war: fade sectors by distance from camera center
-                let fogAlpha = max(0.20, 1.0 - CGFloat(max(0, dist - 1)) * 0.30)
-                sectorNodes[coord]?.alpha = fogAlpha
             }
         }
     }
