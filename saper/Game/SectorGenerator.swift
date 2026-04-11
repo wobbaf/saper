@@ -28,6 +28,17 @@ struct SectorGenerator {
             gemReward = 0
         }
 
+        // Scatter tile gems: ~2.5% chance per non-mine tile
+        for row in 0..<size {
+            for col in 0..<size {
+                if tiles[row][col].hasMine { continue }
+                let gemRollTile = Double(rng.nextInt(upperBound: 10000)) / 10000.0
+                if gemRollTile < 0.025 {
+                    tiles[row][col].hasGem = true
+                }
+            }
+        }
+
         let sector = Sector(coordinate: coord, tiles: tiles, gemReward: gemReward)
         sector.density = density
         return sector

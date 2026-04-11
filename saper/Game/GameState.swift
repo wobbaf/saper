@@ -40,6 +40,7 @@ class GameState: ObservableObject {
     var onSectorReset: ((SectorCoordinate) -> Void)?
     var onDifficultyTierChanged: ((Int) -> Void)?
     var onSectorUnlocked: ((SectorCoordinate, Int) -> Void)?
+    var onTileGemCollected: ((Int, Int, Int) -> Void)?  // globalX, globalY, amount
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -148,6 +149,24 @@ class GameState: ObservableObject {
             }
 
             onTilesRevealed?(revealed)
+
+            // Collect gems from revealed tiles
+            for pos in revealed {
+                let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
+                guard let sector = boardManager.sector(at: sc) else { continue }
+                let lx = pos.globalX - sc.originTileX
+                let ly = pos.globalY - sc.originTileY
+                guard !sector.tiles[ly][lx].gemCollected,
+                      sector.tiles[ly][lx].hasGem else { continue }
+                sector.tiles[ly][lx].gemCollected = true
+                let amount = 1 + perkStacks(.gemMagnet) + profile.prospectorLevel
+                profile.gems += amount
+                gemsCollectedThisSession += amount
+                let _ = profile.addXP(Int(Double(Constants.xpPerGemFind) * xpMultiplier))
+                AudioManager.shared.playCompound(SoundEffect.gemChime)
+                HapticsManager.shared.play(.gemCollected)
+                onTileGemCollected?(pos.globalX, pos.globalY, amount)
+            }
 
             // If this was the sector's first tap, ensureSafeFirstTap may have relocated a
             // mine — refresh any already-revealed border tiles in neighbouring sectors.

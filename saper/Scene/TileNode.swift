@@ -34,6 +34,7 @@ class TileNode: SKSpriteNode {
         guard let renderer = tileRenderer else { return }
         let newTexture = renderer.texture(for: tile.state, adjacentCount: tile.adjacentMineCount)
         self.texture = newTexture
+        updateGemOverlay(tile: tile)
     }
 
     func animateReveal(tile: Tile) {
@@ -47,7 +48,14 @@ class TileNode: SKSpriteNode {
         let scaleUp = SKAction.scale(to: 1.05, duration: 0.08)
         let settle = SKAction.scale(to: 1.0, duration: 0.05)
 
-        run(SKAction.sequence([scaleDown, changeTexture, scaleUp, settle]))
+        if tile.hasGem && tile.state == .revealed {
+            let addGem = SKAction.run { [weak self] in
+                self?.updateGemOverlay(tile: tile, animated: true)
+            }
+            run(SKAction.sequence([scaleDown, changeTexture, scaleUp, settle, addGem]))
+        } else {
+            run(SKAction.sequence([scaleDown, changeTexture, scaleUp, settle]))
+        }
     }
 
     func animateMineReveal() {
@@ -60,5 +68,30 @@ class TileNode: SKSpriteNode {
             SKAction.scale(to: 1.0, duration: 0.15),
         ])
         run(flash)
+    }
+
+    private func updateGemOverlay(tile: Tile, animated: Bool = false) {
+        childNode(withName: "gemOverlay")?.removeFromParent()
+        guard tile.state == .revealed && tile.hasGem else { return }
+
+        let gemLabel = SKLabelNode(text: "💎")
+        gemLabel.name = "gemOverlay"
+        gemLabel.fontSize = 9
+        gemLabel.verticalAlignmentMode = .center
+        gemLabel.horizontalAlignmentMode = .center
+        gemLabel.position = CGPoint(x: Constants.tileSize / 2 - 7, y: -Constants.tileSize / 2 + 7)
+        gemLabel.zPosition = 5
+
+        if animated {
+            gemLabel.setScale(0.1)
+            gemLabel.alpha = 0
+            addChild(gemLabel)
+            gemLabel.run(SKAction.group([
+                SKAction.scale(to: 1.0, duration: 0.2),
+                SKAction.fadeIn(withDuration: 0.2)
+            ]))
+        } else {
+            addChild(gemLabel)
+        }
     }
 }
