@@ -5,7 +5,7 @@ struct GameActions {
 
     enum RevealResult {
         case safe(revealed: [FloodFill.TilePosition])
-        case mine(sectorCoord: SectorCoordinate)
+        case mine(sectorCoord: SectorCoordinate, globalX: Int, globalY: Int)
         case alreadyRevealed
         case sectorLocked
     }
@@ -48,9 +48,8 @@ struct GameActions {
         // Check for mine
         if sector.tiles[localY][localX].hasMine {
             sector.tiles[localY][localX].state = .mine
-            sector.status = .locked
             sector.isModified = true
-            return .mine(sectorCoord: sectorCoord)
+            return .mine(sectorCoord: sectorCoord, globalX: globalX, globalY: globalY)
         }
 
         // Compute adjacent count
@@ -162,8 +161,8 @@ struct GameActions {
         for (nx, ny) in hiddenNeighbors {
             let result = revealTile(globalX: nx, globalY: ny, gameState: gameState)
             switch result {
-            case .mine(let coord):
-                return .mine(sectorCoord: coord)
+            case .mine(let coord, let mx, let my):
+                return .mine(sectorCoord: coord, globalX: mx, globalY: my)
             case .safe(let revealed):
                 allRevealed.append(contentsOf: revealed)
             default:
