@@ -16,15 +16,13 @@ private let shopItems: [ShopItem] = [
 struct ShopView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
 
-    private var isDark: Bool { colorScheme == .dark }
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         NavigationView {
             ZStack {
-                (isDark ? theme.backgroundColors[0] : Color(red: 0.95, green: 0.95, blue: 0.98))
+                theme.backgroundColors[0]
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -35,16 +33,16 @@ struct ShopView: View {
                             .font(.system(size: 18))
                         Text("\(gameState.profile.gems) gems")
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
-                            .foregroundColor(isDark ? .white : .primary)
+                            .foregroundColor(theme.primaryTextColor)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(isDark ? theme.cardBackground : Color.black.opacity(0.04))
+                    .background(theme.cardBackground)
 
                     ScrollView {
                         VStack(spacing: 14) {
                             ForEach(shopItems, id: \.booster.rawValue) { item in
-                                ShopRow(item: item, gameState: gameState, isDark: isDark, theme: theme)
+                                ShopRow(item: item, gameState: gameState, theme: theme)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -58,6 +56,7 @@ struct ShopView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(theme.accentColor)
                 }
             }
         }
@@ -67,7 +66,6 @@ struct ShopView: View {
 private struct ShopRow: View {
     let item: ShopItem
     @ObservedObject var gameState: GameState
-    let isDark: Bool
     let theme: SkinUITheme
 
     /// During a run show the live run count; on the menu show the profile stock.
@@ -99,10 +97,10 @@ private struct ShopRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.booster.displayName)
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(isDark ? .white : .primary)
+                    .foregroundColor(theme.primaryTextColor)
                 Text(item.booster.description)
                     .font(.system(size: 12))
-                    .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
+                    .foregroundColor(theme.secondaryTextColor)
                 Text("Owned: \(count)/\(Constants.maxBoostersPerType)")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundColor(item.color.opacity(0.8))
@@ -136,7 +134,7 @@ private struct ShopRow: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isDark ? theme.cardBackground : Color.black.opacity(0.03))
+                .fill(theme.cardBackground)
         )
     }
 

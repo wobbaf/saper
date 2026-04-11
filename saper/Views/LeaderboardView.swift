@@ -19,17 +19,15 @@ private let leaderboardTabs: [LeaderboardTab] = [
 struct LeaderboardView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab: String = "endless"
     @State private var showAchievements = false
 
-    private var isDark: Bool { colorScheme == .dark }
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         NavigationView {
             ZStack {
-                (isDark ? theme.backgroundColors[0] : Color(red: 0.94, green: 0.94, blue: 0.97))
+                theme.backgroundColors[0]
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -45,7 +43,7 @@ struct LeaderboardView: View {
                     }
 
                     Divider()
-                        .background(isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
+                        .background(theme.secondaryTextColor.opacity(0.2))
 
                     // Entries list
                     let entries = LeaderboardPersistence.entries(forMode: selectedTab)
@@ -55,22 +53,22 @@ struct LeaderboardView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "trophy")
                                 .font(.system(size: 40))
-                                .foregroundColor(isDark ? .white.opacity(0.2) : .secondary.opacity(0.3))
+                                .foregroundColor(theme.secondaryTextColor.opacity(0.4))
                             Text("No scores yet")
                                 .font(.system(size: 16, design: .monospaced))
-                                .foregroundColor(isDark ? .white.opacity(0.4) : .secondary)
+                                .foregroundColor(theme.secondaryTextColor)
                             Text(emptyHint)
                                 .font(.system(size: 12))
-                                .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.6))
+                                .foregroundColor(theme.secondaryTextColor.opacity(0.7))
                                 .multilineTextAlignment(.center)
                         }
                         Spacer()
                     } else {
                         List {
                             ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                                LeaderboardRowView(rank: index + 1, entry: entry, isDark: isDark)
+                                LeaderboardRowView(rank: index + 1, entry: entry, theme: theme)
                                     .listRowBackground(Color.clear)
-                                    .listRowSeparatorTint(isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06))
+                                    .listRowSeparatorTint(theme.secondaryTextColor.opacity(0.12))
                             }
                         }
                         .listStyle(.plain)
@@ -86,12 +84,12 @@ struct LeaderboardView: View {
                     } label: {
                         Label("Medals", systemImage: "medal.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(isDark ? .yellow : .orange)
+                            .foregroundColor(.yellow)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(isDark ? theme.accentColor : .blue)
+                        .foregroundColor(theme.accentColor)
                 }
             }
             .sheet(isPresented: $showAchievements) {
@@ -104,14 +102,14 @@ struct LeaderboardView: View {
     private func tabButton(tab: LeaderboardTab) -> some View {
         let isSelected = selectedTab == tab.id
         let fillColor: Color = isSelected
-            ? (isDark ? theme.accentColor.opacity(0.25) : Color.blue.opacity(0.15))
-            : (isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+            ? theme.accentColor.opacity(0.25)
+            : theme.primaryTextColor.opacity(0.06)
         let strokeColor: Color = isSelected
-            ? (isDark ? theme.accentColor.opacity(0.5) : Color.blue.opacity(0.3))
+            ? theme.accentColor.opacity(0.5)
             : Color.clear
         let textColor: Color = isSelected
-            ? (isDark ? theme.accentColor : .blue)
-            : (isDark ? .white.opacity(0.5) : .secondary)
+            ? theme.accentColor
+            : theme.secondaryTextColor
 
         Button(action: { selectedTab = tab.id }) {
             HStack(spacing: 4) {
@@ -143,7 +141,7 @@ struct LeaderboardView: View {
 struct LeaderboardRowView: View {
     let rank: Int
     let entry: LeaderboardEntry
-    let isDark: Bool
+    let theme: SkinUITheme
 
     var body: some View {
         HStack(spacing: 12) {
@@ -157,10 +155,10 @@ struct LeaderboardRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(scoreText)
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .foregroundColor(isDark ? .white : .primary)
+                    .foregroundColor(theme.primaryTextColor)
                 Text(entry.detail)
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
+                    .foregroundColor(theme.secondaryTextColor)
             }
 
             Spacer()
@@ -168,7 +166,7 @@ struct LeaderboardRowView: View {
             // Date
             Text(formattedDate)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.6))
+                .foregroundColor(theme.secondaryTextColor.opacity(0.7))
         }
         .padding(.vertical, 4)
     }
@@ -187,7 +185,7 @@ struct LeaderboardRowView: View {
         case 1: return .yellow
         case 2: return Color(red: 0.75, green: 0.75, blue: 0.78) // silver
         case 3: return Color(red: 0.8, green: 0.5, blue: 0.2) // bronze
-        default: return isDark ? .white.opacity(0.4) : .secondary
+        default: return theme.secondaryTextColor
         }
     }
 
