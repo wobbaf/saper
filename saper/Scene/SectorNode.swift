@@ -86,7 +86,7 @@ class SectorNode: SKNode {
         }
     }
 
-    func updateOverlay(status: SectorStatus, animated: Bool = false) {
+    func updateOverlay(status: SectorStatus, animated: Bool = false, gemCost: Int = 0) {
         overlayNode?.removeFromParent()
         overlayNode = nil
 
@@ -145,11 +145,14 @@ class SectorNode: SKNode {
             addChild(overlay)
 
             // Gem cost label in the center
-            let gemLabel = SKLabelNode(text: "💎")
-            gemLabel.fontSize = 18
-            gemLabel.position = CGPoint(x: center.x, y: center.y - 9)
+            let costText = gemCost > 0 ? "\(gemCost) 💎" : "💎"
+            let gemLabel = SKLabelNode(text: costText)
+            gemLabel.fontName = "Helvetica-Bold"
+            gemLabel.fontSize = 14
+            gemLabel.fontColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+            gemLabel.position = CGPoint(x: center.x, y: center.y - 7)
             gemLabel.zPosition = 11
-            gemLabel.alpha = 0.55
+            gemLabel.alpha = 0.85
             overlay.addChild(gemLabel)
 
         case .active:

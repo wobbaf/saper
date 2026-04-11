@@ -247,6 +247,11 @@ class GameScene: SKScene {
                     )
                     addChild(sectorNode)
                     sectorNodes[coord] = sectorNode
+                    // Show gem cost immediately for inactive sectors
+                    if sector.status == .inactive {
+                        let cost = gameState.unlockCost(for: coord)
+                        sectorNode.updateOverlay(status: .inactive, gemCost: cost)
+                    }
                 }
             }
         }
@@ -362,6 +367,19 @@ class GameScene: SKScene {
 
     private func handleSectorStatusChanged(coord: SectorCoordinate, status: SectorStatus) {
         sectorNodes[coord]?.updateOverlay(status: status, animated: true)
+        // A solve or unlock changes distances — refresh costs on all visible inactive sectors
+        if status == .solved || status == .active {
+            refreshInactiveSectorCosts()
+        }
+    }
+
+    private func refreshInactiveSectorCosts() {
+        for (coord, node) in sectorNodes {
+            guard let sector = gameState.boardManager.sector(at: coord),
+                  sector.status == .inactive else { continue }
+            let cost = gameState.unlockCost(for: coord)
+            node.updateOverlay(status: .inactive, gemCost: cost)
+        }
     }
 
     private func handleMineHit(coord: SectorCoordinate) {
