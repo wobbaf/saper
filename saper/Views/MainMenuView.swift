@@ -4,7 +4,6 @@ import SwiftUI
 struct MainMenuView: View {
     @ObservedObject var gameState: GameState
     var onClassicMode: () -> Void = {}
-    @Environment(\.colorScheme) private var colorScheme
     @State private var showSettings = false
     @State private var showLeaderboard = false
     @State private var showShop = false
@@ -13,25 +12,19 @@ struct MainMenuView: View {
     @State private var pendingMode: GameMode? = nil
     @State private var showResumeAlert = false
 
-    private var isDark: Bool { colorScheme == .dark }
-
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         ZStack {
-            // Background
+            // Background — always driven by skin theme
             LinearGradient(
-                colors: isDark ? theme.backgroundColors : [
-                    Color(red: 0.92, green: 0.93, blue: 0.96),
-                    Color(red: 0.85, green: 0.87, blue: 0.95),
-                    Color(red: 0.92, green: 0.93, blue: 0.96)
-                ],
+                colors: theme.backgroundColors,
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
 
-            if isDark && theme.showStarfield {
+            if theme.showStarfield {
                 StarFieldBackgroundView()
             }
 
@@ -41,7 +34,8 @@ struct MainMenuView: View {
                 // Title
                 VStack(spacing: 8) {
                     ZStack {
-                        if isDark {
+                        // Glow layer — only for skins with dark, vibrant backgrounds
+                        if theme.showStarfield {
                             Text("MINESWEEPER FOREVER")
                                 .font(.system(size: 28, weight: .black, design: .monospaced))
                                 .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
@@ -51,19 +45,13 @@ struct MainMenuView: View {
 
                         Text("MINESWEEPER FOREVER")
                             .font(.system(size: 28, weight: .black, design: .monospaced))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: isDark ? theme.titleColors : [.blue, .purple, .blue],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .opacity(animateTitle ? 1.0 : 0.7)
+                            .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
+                            .opacity(animateTitle ? 1.0 : 0.8)
                     }
 
                     Text("I N F I N I T Y")
                         .font(.system(size: 20, weight: .light, design: .monospaced))
-                        .foregroundColor(isDark ? .white.opacity(0.6) : .secondary)
+                        .foregroundColor(theme.secondaryTextColor)
                         .tracking(8)
                 }
                 .padding(.bottom, 50)
@@ -84,7 +72,7 @@ struct MainMenuView: View {
                         modeRow(
                             icon: "square.grid.3x3.topleft.filled",
                             title: "Classic",
-                            borderColor: Color.gray.opacity(0.3)
+                            borderColor: theme.secondaryTextColor.opacity(0.3)
                         )
                     }
                 }
@@ -94,9 +82,9 @@ struct MainMenuView: View {
 
                 // Stats bar
                 HStack(spacing: 20) {
-                    StatBadge(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: theme.accentColor, cardBg: theme.cardBackground)
-                    StatBadge(icon: "star.fill", value: "Lv.\(gameState.profile.level)", color: .yellow, cardBg: theme.cardBackground)
-                    StatBadge(icon: "trophy.fill", value: "\(gameState.profile.totalSectorsSolved)", color: .orange, cardBg: theme.cardBackground)
+                    StatBadge(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: theme.accentColor, cardBg: theme.cardBackground, textColor: theme.primaryTextColor)
+                    StatBadge(icon: "star.fill", value: "Lv.\(gameState.profile.level)", color: .yellow, cardBg: theme.cardBackground, textColor: theme.primaryTextColor)
+                    StatBadge(icon: "trophy.fill", value: "\(gameState.profile.totalSectorsSolved)", color: .orange, cardBg: theme.cardBackground, textColor: theme.primaryTextColor)
                 }
                 .padding(.bottom, 20)
 
@@ -165,9 +153,9 @@ struct MainMenuView: View {
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 14))
-                .foregroundColor(isDark ? .white.opacity(0.3) : .secondary.opacity(0.5))
+                .foregroundColor(theme.secondaryTextColor.opacity(0.6))
         }
-        .foregroundColor(isDark ? .white : .primary)
+        .foregroundColor(theme.primaryTextColor)
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .background(
@@ -184,7 +172,7 @@ struct MainMenuView: View {
                 Image(systemName: icon).font(.system(size: 22))
                 Text(label).font(.system(size: 10))
             }
-            .foregroundColor(accent ? theme.accentColor : (isDark ? .white.opacity(0.6) : .secondary))
+            .foregroundColor(accent ? theme.accentColor : theme.secondaryTextColor)
         }
     }
 
@@ -212,7 +200,7 @@ struct StatBadge: View {
     let value: String
     let color: Color
     var cardBg: Color = Color.white.opacity(0.08)
-    @Environment(\.colorScheme) private var colorScheme
+    var textColor: Color = .white
 
     var body: some View {
         HStack(spacing: 4) {
@@ -221,11 +209,11 @@ struct StatBadge: View {
                 .font(.system(size: 12))
             Text(value)
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(colorScheme == .dark ? .white : .primary)
+                .foregroundColor(textColor)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(colorScheme == .dark ? cardBg : Color.black.opacity(0.06))
+        .background(cardBg)
         .cornerRadius(8)
     }
 }

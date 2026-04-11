@@ -11,6 +11,10 @@ struct SkinUITheme {
     let showStarfield: Bool
     let cardBackground: Color
     let buttonBackground: Color
+    /// Primary text color appropriate for this skin's background.
+    let primaryTextColor: Color
+    /// Muted/secondary text color appropriate for this skin's background.
+    let secondaryTextColor: Color
 }
 
 enum SkinType: String, Codable, CaseIterable {
@@ -154,30 +158,34 @@ enum SkinType: String, Codable, CaseIterable {
         case .classicLight:
             return SkinUITheme(
                 backgroundColors: [
-                    Color(red: 0.72, green: 0.72, blue: 0.72),
-                    Color(red: 0.80, green: 0.80, blue: 0.80),
-                    Color(red: 0.72, green: 0.72, blue: 0.72)
+                    Color(red: 0.84, green: 0.84, blue: 0.84),
+                    Color(red: 0.88, green: 0.88, blue: 0.88),
+                    Color(red: 0.84, green: 0.84, blue: 0.84)
                 ],
-                titleColors: [Color(red: 0.0, green: 0.0, blue: 0.7), .black, Color(red: 0.0, green: 0.0, blue: 0.7)],
-                accentColor: Color(red: 0.0, green: 0.0, blue: 0.7),
+                titleColors: [Color(red: 0.0, green: 0.0, blue: 0.65), Color(red: 0.0, green: 0.0, blue: 0.5), Color(red: 0.0, green: 0.0, blue: 0.65)],
+                accentColor: Color(red: 0.0, green: 0.0, blue: 0.65),
                 secondaryColor: Color(red: 0.6, green: 0.0, blue: 0.0),
                 showStarfield: false,
-                cardBackground: Color.black.opacity(0.08),
-                buttonBackground: Color.black.opacity(0.06)
+                cardBackground: Color.black.opacity(0.09),
+                buttonBackground: Color.black.opacity(0.07),
+                primaryTextColor: Color(red: 0.05, green: 0.05, blue: 0.05),
+                secondaryTextColor: Color(red: 0.0, green: 0.0, blue: 0.0).opacity(0.5)
             )
         case .classicDark:
             return SkinUITheme(
                 backgroundColors: [
-                    Color(red: 0.10, green: 0.10, blue: 0.10),
-                    Color(red: 0.15, green: 0.15, blue: 0.15),
-                    Color(red: 0.10, green: 0.10, blue: 0.10)
+                    Color(red: 0.11, green: 0.11, blue: 0.11),
+                    Color(red: 0.16, green: 0.16, blue: 0.16),
+                    Color(red: 0.11, green: 0.11, blue: 0.11)
                 ],
-                titleColors: [Color(red: 0.75, green: 0.75, blue: 0.75), .white, Color(red: 0.75, green: 0.75, blue: 0.75)],
-                accentColor: Color(red: 0.75, green: 0.75, blue: 0.75),
-                secondaryColor: Color(red: 0.55, green: 0.55, blue: 0.55),
+                titleColors: [Color(red: 0.80, green: 0.80, blue: 0.80), .white, Color(red: 0.80, green: 0.80, blue: 0.80)],
+                accentColor: Color(red: 0.80, green: 0.80, blue: 0.80),
+                secondaryColor: Color(red: 0.58, green: 0.58, blue: 0.58),
                 showStarfield: false,
-                cardBackground: Color.white.opacity(0.06),
-                buttonBackground: Color.white.opacity(0.04)
+                cardBackground: Color.white.opacity(0.08),
+                buttonBackground: Color.white.opacity(0.06),
+                primaryTextColor: Color.white,
+                secondaryTextColor: Color.white.opacity(0.55)
             )
         case .space:
             return SkinUITheme(
@@ -191,7 +199,9 @@ enum SkinType: String, Codable, CaseIterable {
                 secondaryColor: .purple,
                 showStarfield: true,
                 cardBackground: Color.white.opacity(0.08),
-                buttonBackground: Color.white.opacity(0.06)
+                buttonBackground: Color.white.opacity(0.06),
+                primaryTextColor: Color.white,
+                secondaryTextColor: Color.white.opacity(0.55)
             )
         case .neonGrid:
             return SkinUITheme(
@@ -205,7 +215,9 @@ enum SkinType: String, Codable, CaseIterable {
                 secondaryColor: Color(red: 0.0, green: 0.9, blue: 0.4),
                 showStarfield: false,
                 cardBackground: Color.white.opacity(0.05),
-                buttonBackground: Color.white.opacity(0.04)
+                buttonBackground: Color.white.opacity(0.04),
+                primaryTextColor: Color(red: 0.0, green: 0.9, blue: 0.4),
+                secondaryTextColor: Color.white.opacity(0.55)
             )
         case .minecraft:
             return SkinUITheme(
@@ -219,7 +231,9 @@ enum SkinType: String, Codable, CaseIterable {
                 secondaryColor: Color(red: 0.85, green: 0.65, blue: 0.20),
                 showStarfield: false,
                 cardBackground: Color(red: 0.15, green: 0.09, blue: 0.03).opacity(0.8),
-                buttonBackground: Color(red: 0.35, green: 0.22, blue: 0.08).opacity(0.5)
+                buttonBackground: Color(red: 0.35, green: 0.22, blue: 0.08).opacity(0.5),
+                primaryTextColor: Color(red: 0.90, green: 0.80, blue: 0.60),
+                secondaryTextColor: Color(red: 0.90, green: 0.80, blue: 0.60).opacity(0.6)
             )
         }
     }

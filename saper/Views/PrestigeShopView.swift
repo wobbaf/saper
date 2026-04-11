@@ -6,15 +6,13 @@ import Combine
 struct PrestigeShopView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
 
-    private var isDark: Bool { colorScheme == .dark }
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
         NavigationView {
             ZStack {
-                (isDark ? theme.backgroundColors[0] : Color(red: 0.95, green: 0.95, blue: 0.98))
+                theme.backgroundColors[0]
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -25,22 +23,22 @@ struct PrestigeShopView: View {
                             .font(.system(size: 18))
                         Text("\(gameState.profile.gems) gems")
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
-                            .foregroundColor(isDark ? .white : .primary)
+                            .foregroundColor(theme.primaryTextColor)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(isDark ? theme.cardBackground : Color.black.opacity(0.04))
+                    .background(theme.cardBackground)
 
                     Text("Upgrades are permanent and apply to every run.")
                         .font(.system(size: 12))
-                        .foregroundColor(isDark ? .white.opacity(0.4) : .secondary)
+                        .foregroundColor(theme.secondaryTextColor)
                         .padding(.top, 12)
                         .padding(.bottom, 4)
 
                     ScrollView {
                         VStack(spacing: 14) {
                             ForEach(PrestigeUpgrade.allCases, id: \.rawValue) { upgrade in
-                                PrestigeRow(upgrade: upgrade, gameState: gameState, isDark: isDark, theme: theme)
+                                PrestigeRow(upgrade: upgrade, gameState: gameState, theme: theme)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -54,6 +52,7 @@ struct PrestigeShopView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(theme.accentColor)
                 }
             }
         }
@@ -63,7 +62,6 @@ struct PrestigeShopView: View {
 private struct PrestigeRow: View {
     let upgrade: PrestigeUpgrade
     @ObservedObject var gameState: GameState
-    let isDark: Bool
     let theme: SkinUITheme
 
     private var currentLevel: Int { gameState.profile.prestigeLevel(for: upgrade) }
@@ -93,14 +91,14 @@ private struct PrestigeRow: View {
                 HStack(spacing: 6) {
                     Text(upgrade.displayName)
                         .font(.system(size: 16, weight: .bold, design: .monospaced))
-                        .foregroundColor(isDark ? .white : .primary)
+                        .foregroundColor(theme.primaryTextColor)
                     if upgrade.maxLevel > 1 {
                         levelPips
                     }
                 }
                 Text(upgrade.description)
                     .font(.system(size: 12))
-                    .foregroundColor(isDark ? .white.opacity(0.55) : .secondary)
+                    .foregroundColor(theme.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -137,7 +135,7 @@ private struct PrestigeRow: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(isDark ? theme.cardBackground : Color.black.opacity(0.03))
+                .fill(theme.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(upgrade.color.opacity(isMaxed ? 0.4 : 0.15), lineWidth: 1)
