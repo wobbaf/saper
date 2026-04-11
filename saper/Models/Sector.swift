@@ -4,6 +4,7 @@ class Sector: Codable {
     let coordinate: SectorCoordinate
     var tiles: [[Tile]]
     var status: SectorStatus = .inactive
+    var density: Double = 0.0
     var gemReward: Int = 0
     var gemCollected: Bool = false
     var firstTapDone: Bool = false

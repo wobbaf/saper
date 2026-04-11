@@ -5,6 +5,17 @@ struct HUDOverlayView: View {
     @ObservedObject var gameState: GameState
     var onShopTapped: () -> Void = {}
 
+    // Booster bounce animation state
+    @State private var revealOneBounce: Bool = false
+    @State private var solveSectorBounce: Bool = false
+    @State private var undoMineBounce: Bool = false
+    @State private var prevRevealOne: Int = 0
+    @State private var prevSolveSector: Int = 0
+    @State private var prevUndoMine: Int = 0
+
+    // XP bar level-up glow
+    @State private var xpBarGlowing: Bool = false
+
     var body: some View {
         ZStack(alignment: .top) {
             // Non-interactive background shapes for layout
@@ -50,6 +61,11 @@ struct HUDOverlayView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
         }
+        .onAppear {
+            prevRevealOne = gameState.revealOneAvailable
+            prevSolveSector = gameState.solveSectorAvailable
+            prevUndoMine = gameState.undoMineAvailable
+        }
     }
 
     // MARK: - Top pill
@@ -81,8 +97,35 @@ struct HUDOverlayView: View {
         pillBackground {
             HStack(spacing: 0) {
                 boosterButton(icon: "eye.fill",             count: gameState.revealOneAvailable,   color: .yellow, action: useRevealOne)
+                    .scaleEffect(revealOneBounce ? 1.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: revealOneBounce)
                 boosterButton(icon: "checkmark.seal.fill",  count: gameState.solveSectorAvailable, color: .purple, action: useSolveSector)
+                    .scaleEffect(solveSectorBounce ? 1.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: solveSectorBounce)
                 boosterButton(icon: "arrow.uturn.backward", count: gameState.undoMineAvailable,    color: .orange, action: useUndoMine)
+                    .scaleEffect(undoMineBounce ? 1.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: undoMineBounce)
+            }
+            .onChange(of: gameState.revealOneAvailable) { newVal in
+                if newVal > prevRevealOne {
+                    revealOneBounce = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { revealOneBounce = false }
+                }
+                prevRevealOne = newVal
+            }
+            .onChange(of: gameState.solveSectorAvailable) { newVal in
+                if newVal > prevSolveSector {
+                    solveSectorBounce = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { solveSectorBounce = false }
+                }
+                prevSolveSector = newVal
+            }
+            .onChange(of: gameState.undoMineAvailable) { newVal in
+                if newVal > prevUndoMine {
+                    undoMineBounce = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { undoMineBounce = false }
+                }
+                prevUndoMine = newVal
             }
         }
     }
@@ -104,12 +147,20 @@ struct HUDOverlayView: View {
             )
     }
 
-    // MARK: - Stats section (gems · sectors · lives/timer)
+    // MARK: - Stats section (gems · sectors · streak · lives/timer)
 
     private var statsSection: some View {
         HStack(spacing: 14) {
             statItem(icon: "diamond.fill", value: "\(gameState.profile.gems)", color: .cyan)
             statItem(icon: "checkmark.seal.fill", value: "\(gameState.sectorsSolvedThisSession)", color: .green)
+
+            if gameState.solveStreak >= 2 {
+                statItem(
+                    icon: "flame.fill",
+                    value: "×\(String(format: "%.1f", gameState.streakXpMultiplier))",
+                    color: streakColor
+                )
+            }
 
             if gameState.gameMode == .endless {
                 statItem(
@@ -127,6 +178,11 @@ struct HUDOverlayView: View {
                 )
             }
         }
+    }
+
+    private var streakColor: Color {
+        let t = min(Double(gameState.solveStreak) / 10.0, 1.0)
+        return t < 0.5 ? .orange : .red
     }
 
     private func statItem(icon: String, value: String, color: Color) -> some View {
@@ -204,9 +260,16 @@ struct HUDOverlayView: View {
                             endPoint: .trailing
                         ))
                         .frame(width: geometry.size.width * gameState.profile.xpProgress, height: 4)
+                        .shadow(color: xpBarGlowing ? .cyan.opacity(0.9) : .clear, radius: 5)
                 }
             }
             .frame(height: 4)
+            .onChange(of: gameState.profile.level) { _ in
+                withAnimation(.easeIn(duration: 0.1)) { xpBarGlowing = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.easeOut(duration: 0.4)) { xpBarGlowing = false }
+                }
+            }
 
             Text("\(gameState.profile.xp)/\(gameState.profile.xpForNextLevel)")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))

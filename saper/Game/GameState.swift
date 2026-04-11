@@ -17,6 +17,10 @@ class GameState: ObservableObject {
     var focusedSector: SectorCoordinate = SectorCoordinate(x: 0, y: 0)
     /// Current difficulty tier (0 = base). Increments every sectorsPerDifficultyTier sectors solved.
     @Published var difficultyTier: Int = 0
+    /// Consecutive sectors solved without hitting a mine. Resets on mine hit.
+    @Published var solveStreak: Int = 0
+    /// Set to show gem-unlock confirmation dialog before spending gems.
+    @Published var pendingUnlockCoord: SectorCoordinate? = nil
 
     // Per-run state — reset at the start of every run
     @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
@@ -35,6 +39,7 @@ class GameState: ObservableObject {
     var onSectorSolved: ((SectorCoordinate) -> Void)?
     var onSectorReset: ((SectorCoordinate) -> Void)?
     var onDifficultyTierChanged: ((Int) -> Void)?
+    var onSectorUnlocked: ((SectorCoordinate, Int) -> Void)?
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -57,6 +62,9 @@ class GameState: ObservableObject {
         let prestigeBonus = 1.0 + Double(profile.scholarLevel) * 0.25
         return runBonus * prestigeBonus
     }
+
+    /// Streak bonus: +10% XP per sector in current streak, capped at 2×.
+    var streakXpMultiplier: Double { min(1.0 + Double(max(0, solveStreak - 1)) * 0.1, 2.0) }
     var sectorUnlockCost: Int { hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost }
 
     /// Gem cost to unlock a sector. Mine-hit (locked) sectors have a fixed cost;
@@ -162,6 +170,7 @@ class GameState: ObservableObject {
             }
 
         case .mine(let coord):
+            solveStreak = 0
             AudioManager.shared.play(.mineExplosion)
             HapticsManager.shared.play(.mineHit)
             MusicEngine.shared.triggerMineHit()
@@ -256,6 +265,7 @@ class GameState: ObservableObject {
             }
 
         case .mine(let coord):
+            solveStreak = 0
             onMineHit?(coord)
             onSectorStatusChanged?(coord, .locked)
             if gameMode == .hardcore {
@@ -304,12 +314,20 @@ class GameState: ObservableObject {
     }
 
     func unlockSector(_ coord: SectorCoordinate) {
+        let cost = unlockCost(for: coord)
         if GameActions.unlockSectorWithGems(sectorCoord: coord, gameState: self) {
             AudioManager.shared.play(.boosterUsed)
             HapticsManager.shared.play(.lockedSectorTap)
             onSectorStatusChanged?(coord, .active)
+            onSectorUnlocked?(coord, cost)
             objectWillChange.send()
         }
+    }
+
+    func confirmUnlockSector() {
+        guard let coord = pendingUnlockCoord else { return }
+        pendingUnlockCoord = nil
+        unlockSector(coord)
     }
 
     func useUndoMine(sectorCoord: SectorCoordinate) {
@@ -327,6 +345,7 @@ class GameState: ObservableObject {
 
     private func handleSectorSolved(_ coord: SectorCoordinate) {
         sectorsSolvedThisSession += 1
+        solveStreak += 1
 
         AudioManager.shared.playCompound(SoundEffect.sectorSolvedChord)
         HapticsManager.shared.play(.sectorSolved)
@@ -342,7 +361,7 @@ class GameState: ObservableObject {
             onDifficultyTierChanged?(newTier)
         }
 
-        let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier)
+        let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier * streakXpMultiplier)
         let leveledUp = profile.addXP(xpGained)
         if leveledUp && pendingPerkOffer.isEmpty {
             let offerCount = profile.extraChoiceUnlocked ? 4 : 3
@@ -395,6 +414,8 @@ class GameState: ObservableObject {
         sectorsSolvedThisSession = 0
         tilesRevealedThisSession = 0
         gemsCollectedThisSession = 0
+        solveStreak = 0
+        pendingUnlockCoord = nil
         isPlaying = true
         pendingPerkOffer = []
 
