@@ -9,6 +9,8 @@ struct MainMenuView: View {
     @State private var showSkinPicker = false
     @State private var showLeaderboard = false
     @State private var showShop = false
+    @State private var showAchievements = false
+    @State private var showBlueprints = false
     @State private var animateTitle = false
     @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
@@ -71,15 +73,6 @@ struct MainMenuView: View {
 
                 // Game mode buttons
                 VStack(spacing: 16) {
-                    Button(action: onClassicMode) {
-                        modeRow(
-                            icon: "square.grid.3x3.topleft.filled",
-                            title: "Classic",
-                            subtitle: "Windows-style Minesweeper",
-                            borderColor: Color.gray.opacity(0.3)
-                        )
-                    }
-
                     ForEach(GameMode.allCases, id: \.self) { mode in
                         Button(action: { startGame(mode: mode) }) {
                             modeRow(
@@ -89,6 +82,15 @@ struct MainMenuView: View {
                                 borderColor: borderColorForMode(mode)
                             )
                         }
+                    }
+
+                    Button(action: onClassicMode) {
+                        modeRow(
+                            icon: "square.grid.3x3.topleft.filled",
+                            title: "Classic",
+                            subtitle: "Windows-style Minesweeper",
+                            borderColor: Color.gray.opacity(0.3)
+                        )
                     }
                 }
                 .padding(.horizontal, 30)
@@ -103,12 +105,14 @@ struct MainMenuView: View {
                 }
                 .padding(.bottom, 20)
 
-                // Bottom buttons
-                HStack(spacing: 30) {
+                // Bottom buttons — row 1
+                HStack(spacing: 24) {
                     iconButton(icon: "gearshape.fill", label: "Settings", action: { showSettings = true })
                     iconButton(icon: "trophy.fill", label: "Scores", action: { showLeaderboard = true })
                     iconButton(icon: "paintbrush.fill", label: "Skins", action: { showSkinPicker = true })
                     iconButton(icon: "arrow.up.circle.fill", label: "Upgrades", action: { showShop = true }, accent: true)
+                    iconButton(icon: "wrench.and.screwdriver.fill", label: "Blueprints", action: { showBlueprints = true })
+                    iconButton(icon: "medal.fill", label: "Medals", action: { showAchievements = true })
                 }
                 .padding(.bottom, 30)
             }
@@ -124,6 +128,12 @@ struct MainMenuView: View {
         }
         .sheet(isPresented: $showShop) {
             PrestigeShopView(gameState: gameState)
+        }
+        .sheet(isPresented: $showAchievements) {
+            AchievementListView(gameState: gameState)
+        }
+        .sheet(isPresented: $showBlueprints) {
+            BlueprintShopView(gameState: gameState)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
@@ -145,6 +155,10 @@ struct MainMenuView: View {
     }
 
     private func startGame(mode: GameMode) {
+        if mode == .practice {
+            gameState.startGame(mode: mode)
+            return
+        }
         if (mode == .endless || mode == .hardcore),
            GamePersistence.savedGameMode() == mode {
             pendingMode = mode
@@ -198,17 +212,19 @@ struct MainMenuView: View {
 
     private func iconForMode(_ mode: GameMode) -> String {
         switch mode {
-        case .endless: return "infinity"
+        case .endless:  return "infinity"
         case .hardcore: return "flame.fill"
-        case .timed: return "timer"
+        case .timed:    return "timer"
+        case .practice: return "graduationcap.fill"
         }
     }
 
     private func borderColorForMode(_ mode: GameMode) -> Color {
         switch mode {
-        case .endless: return theme.accentColor.opacity(0.4)
+        case .endless:  return theme.accentColor.opacity(0.4)
         case .hardcore: return .red.opacity(0.35)
-        case .timed: return .orange.opacity(0.35)
+        case .timed:    return .orange.opacity(0.35)
+        case .practice: return .green.opacity(0.35)
         }
     }
 }

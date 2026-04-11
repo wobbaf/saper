@@ -21,6 +21,34 @@ struct PlayerProfile: Codable {
     var autoFlagEnabled: Bool = false
     var appearanceMode: Int = 0 // 0 = system, 1 = light, 2 = dark
 
+    // Achievement tracking
+    var unlockedAchievements: [String] = []
+    var maxSolveStreak: Int = 0
+    var totalPiggyBanksFound: Int = 0
+    var highestLevelReached: Int = 0
+
+    // Blueprint upgrades
+    var quickStartLevel: Int = 0
+    var lastStandUnlocked: Bool = false
+    var streakSavantUnlocked: Bool = false
+    var lastStandUsedThisRun: Bool = false
+
+    func blueprintLevel(for upgrade: BlueprintUpgrade) -> Int {
+        switch upgrade {
+        case .quickStart:   return quickStartLevel
+        case .lastStand:    return lastStandUnlocked ? 1 : 0
+        case .streakSavant: return streakSavantUnlocked ? 1 : 0
+        }
+    }
+
+    mutating func applyBlueprint(_ upgrade: BlueprintUpgrade) {
+        switch upgrade {
+        case .quickStart:   quickStartLevel += 1
+        case .lastStand:    lastStandUnlocked = true
+        case .streakSavant: streakSavantUnlocked = true
+        }
+    }
+
     // Prestige upgrades (permanent, affect every run)
     var headstartLevel: Int = 0       // 0–3: +1 starting booster per level
     var scholarLevel: Int = 0         // 0–2: +25% XP per level

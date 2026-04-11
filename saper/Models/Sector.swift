@@ -9,6 +9,7 @@ class Sector: Codable {
     var gemCollected: Bool = false
     var firstTapDone: Bool = false
     var isModified: Bool = false
+    var modifier: SectorModifier? = nil
 
     init(coordinate: SectorCoordinate, tiles: [[Tile]], gemReward: Int = 0) {
         self.coordinate = coordinate

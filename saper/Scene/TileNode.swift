@@ -35,6 +35,22 @@ class TileNode: SKSpriteNode {
         let newTexture = renderer.texture(for: tile.state, adjacentCount: tile.adjacentMineCount)
         self.texture = newTexture
         updateGemOverlay(tile: tile)
+        updatePiggyBankOverlay(tile: tile)
+    }
+
+    private func updatePiggyBankOverlay(tile: Tile) {
+        childNode(withName: "piggyBankIcon")?.removeFromParent()
+        if tile.isPiggyBank && !tile.piggyBankCollected && tile.state == .hidden {
+            let icon = SKLabelNode(text: "💰")
+            icon.name = "piggyBankIcon"
+            icon.fontSize = 10
+            icon.verticalAlignmentMode = .bottom
+            icon.horizontalAlignmentMode = .right
+            icon.position = CGPoint(x: Constants.tileSize / 2 - 2, y: 2)
+            icon.alpha = 0.4
+            icon.zPosition = 5
+            addChild(icon)
+        }
     }
 
     func animateReveal(tile: Tile) {
@@ -44,6 +60,7 @@ class TileNode: SKSpriteNode {
         let scaleDown = SKAction.scale(to: 0.8, duration: 0.05)
         let changeTexture = SKAction.run { [weak self] in
             self?.texture = newTexture
+            self?.updatePiggyBankOverlay(tile: tile)
         }
         let scaleUp = SKAction.scale(to: 1.05, duration: 0.08)
         let settle = SKAction.scale(to: 1.0, duration: 0.05)

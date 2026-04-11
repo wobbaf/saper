@@ -18,7 +18,7 @@ struct saperApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(gameState)
-                .onChange(of: scenePhase) { _, newPhase in
+                .onChange(of: scenePhase) { newPhase in
                     if newPhase == .background || newPhase == .inactive {
                         saveState()
                     }

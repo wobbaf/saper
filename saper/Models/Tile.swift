@@ -6,4 +6,6 @@ struct Tile: Codable {
     var adjacentMineCount: Int = 0
     var hasGem: Bool = false
     var gemCollected: Bool = false
+    var isPiggyBank: Bool = false
+    var piggyBankCollected: Bool = false
 }

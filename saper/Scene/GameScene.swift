@@ -229,12 +229,14 @@ class GameScene: SKScene {
 
     /// Create SectorNodes for loaded sectors that don't have visual nodes yet.
     /// Only create nodes within a reasonable visual radius.
+    /// Also applies fog-of-war alpha based on Chebyshev distance.
     private func syncSectorNodes() {
         let center = cameraController.centerSectorCoordinate()
         let visualRadius = Constants.loadRadius + 1
 
         for (coord, sector) in gameState.boardManager.sectors {
-            if coord.chebyshevDistance(to: center) <= visualRadius {
+            let dist = coord.chebyshevDistance(to: center)
+            if dist <= visualRadius {
                 if sectorNodes[coord] == nil {
                     let sectorNode = SectorNode(
                         coordinate: coord,
@@ -249,6 +251,9 @@ class GameScene: SKScene {
                         sectorNode.updateOverlay(status: .inactive, gemCost: cost)
                     }
                 }
+                // Fog of war: fade sectors by distance from camera center
+                let fogAlpha = max(0.20, 1.0 - CGFloat(max(0, dist - 1)) * 0.30)
+                sectorNodes[coord]?.alpha = fogAlpha
             }
         }
     }
@@ -292,6 +297,27 @@ class GameScene: SKScene {
                 "+\(amount) 💎",
                 at: worldPos,
                 color: SKColor(red: 0.3, green: 0.9, blue: 1.0, alpha: 1.0)
+            )
+        }
+
+        gameState.onPiggyBankFound = { [weak self] gx, gy, amount in
+            guard let self = self else { return }
+            let worldX = CGFloat(gx) * Constants.tileSize + Constants.tileSize / 2
+            let worldY = CGFloat(gy) * Constants.tileSize + Constants.tileSize / 2
+            self.hudNode.showFloatingText(
+                "+\(amount) 💰",
+                at: CGPoint(x: worldX, y: worldY),
+                color: SKColor(red: 1.0, green: 0.85, blue: 0.2, alpha: 1.0)
+            )
+        }
+
+        gameState.onAchievementUnlocked = { [weak self] achievement in
+            guard let self = self else { return }
+            let camPos = self.cameraNode.position
+            self.hudNode.showFloatingText(
+                "🏆 \(achievement.displayName)",
+                at: CGPoint(x: camPos.x, y: camPos.y + 60),
+                color: SKColor(red: 1.0, green: 0.85, blue: 0.2, alpha: 1.0)
             )
         }
 
