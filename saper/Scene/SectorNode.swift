@@ -6,6 +6,7 @@ class SectorNode: SKNode {
     var tileNodes: [[TileNode]] = []
     private var overlayNode: SKShapeNode?
     private var borderNode: SKShapeNode?
+    private var modifierBadgeNode: SKLabelNode?
 
     init(coordinate: SectorCoordinate, sector: Sector, renderer: TileRenderer) {
         self.coordinate = coordinate
@@ -62,6 +63,7 @@ class SectorNode: SKNode {
         }
 
         updateOverlay(status: sector.status)
+        updateModifierBadge(modifier: sector.modifier)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -164,6 +166,33 @@ class SectorNode: SKNode {
         case .active:
             break
         }
+    }
+
+    func updateModifierBadge(modifier: SectorModifier?) {
+        modifierBadgeNode?.removeFromParent()
+        modifierBadgeNode = nil
+        guard let modifier = modifier else { return }
+
+        let sectorPixelSize = Constants.sectorPixelSize
+        let origin = CGPoint(
+            x: CGFloat(coordinate.originTileX) * Constants.tileSize,
+            y: CGFloat(coordinate.originTileY) * Constants.tileSize
+        )
+
+        let badge = SKLabelNode(text: modifier.badge)
+        badge.fontSize = 14
+        badge.verticalAlignmentMode = .top
+        badge.horizontalAlignmentMode = .right
+        badge.position = CGPoint(x: origin.x + sectorPixelSize - 4, y: origin.y + sectorPixelSize - 4)
+        badge.zPosition = 12
+        badge.alpha = 0.9
+        addChild(badge)
+        modifierBadgeNode = badge
+
+        // Subtle pulse
+        let fadeDown = SKAction.fadeAlpha(to: 0.55, duration: 1.2)
+        let fadeUp = SKAction.fadeAlpha(to: 0.9, duration: 1.2)
+        badge.run(SKAction.repeatForever(SKAction.sequence([fadeDown, fadeUp])))
     }
 
     // MARK: - Sector Solved Animation

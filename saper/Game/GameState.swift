@@ -41,6 +41,8 @@ class GameState: ObservableObject {
     var onDifficultyTierChanged: ((Int) -> Void)?
     var onSectorUnlocked: ((SectorCoordinate, Int) -> Void)?
     var onTileGemCollected: ((Int, Int, Int) -> Void)?  // globalX, globalY, amount
+    var onPiggyBankFound: ((Int, Int, Int) -> Void)?    // globalX, globalY, gems
+    var onAchievementUnlocked: ((Achievement) -> Void)?
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -64,21 +66,27 @@ class GameState: ObservableObject {
         return runBonus * prestigeBonus
     }
 
-    /// Streak bonus: +10% XP per sector in current streak, capped at 2×.
-    var streakXpMultiplier: Double { min(1.0 + Double(max(0, solveStreak - 1)) * 0.1, 2.0) }
+    /// Streak bonus: +10% XP per sector in current streak, capped at 2× (3× with Streak Savant blueprint).
+    var streakXpMultiplier: Double {
+        let cap = profile.streakSavantUnlocked ? 3.0 : 2.0
+        return min(1.0 + Double(max(0, solveStreak - 1)) * 0.1, cap)
+    }
     var sectorUnlockCost: Int { hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost }
 
     /// Gem cost to unlock a sector. Mine-hit (locked) sectors have a fixed cost;
     /// inactive sectors scale with BFS distance to the nearest solved sector.
     func unlockCost(for coord: SectorCoordinate) -> Int {
         guard let sector = boardManager.sector(at: coord) else { return Constants.sectorUnlockCost }
+        let sealedMultiplier = sector.modifier == .sealed ? 2 : 1
         switch sector.status {
         case .locked:
-            return hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost
+            let base = hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost
+            return base * sealedMultiplier
         case .inactive:
             let dist = boardManager.distanceToNearestSolved(from: coord)
             let base = max(2, dist * 4)
-            return hasPerk(.sectorDiscount) ? max(1, base / 2) : base
+            let discounted = hasPerk(.sectorDiscount) ? max(1, base / 2) : base
+            return discounted * sealedMultiplier
         default:
             return 0
         }
@@ -156,16 +164,32 @@ class GameState: ObservableObject {
                 guard let sector = boardManager.sector(at: sc) else { continue }
                 let lx = pos.globalX - sc.originTileX
                 let ly = pos.globalY - sc.originTileY
-                guard !sector.tiles[ly][lx].gemCollected,
-                      sector.tiles[ly][lx].hasGem else { continue }
-                sector.tiles[ly][lx].gemCollected = true
-                let amount = 1
-                profile.gems += amount
-                gemsCollectedThisSession += amount
-                let _ = profile.addXP(Int(Double(Constants.xpPerGemFind) * xpMultiplier))
-                AudioManager.shared.playCompound(SoundEffect.gemChime)
-                HapticsManager.shared.play(.gemCollected)
-                onTileGemCollected?(pos.globalX, pos.globalY, amount)
+                guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { continue }
+                // Tile gem
+                if !sector.tiles[ly][lx].gemCollected && sector.tiles[ly][lx].hasGem {
+                    sector.tiles[ly][lx].gemCollected = true
+                    let amount = 1
+                    profile.gems += amount
+                    profile.totalGemsCollected += amount
+                    gemsCollectedThisSession += amount
+                    let _ = profile.addXP(Int(Double(Constants.xpPerGemFind) * xpMultiplier))
+                    AudioManager.shared.playCompound(SoundEffect.gemChime)
+                    HapticsManager.shared.play(.gemCollected)
+                    onTileGemCollected?(pos.globalX, pos.globalY, amount)
+                }
+                // Piggy bank
+                if sector.tiles[ly][lx].isPiggyBank && !sector.tiles[ly][lx].piggyBankCollected {
+                    var tile = sector.tiles[ly][lx]
+                    tile.piggyBankCollected = true
+                    sector.setTile(tile, atLocalX: lx, localY: ly)
+                    let amount = 5 + Int.random(in: 0...5)
+                    profile.gems += amount
+                    profile.totalGemsCollected += amount
+                    profile.totalPiggyBanksFound += 1
+                    gemsCollectedThisSession += amount
+                    onPiggyBankFound?(pos.globalX, pos.globalY, amount)
+                    checkAchievements()
+                }
             }
 
             // If this was the sector's first tap, ensureSafeFirstTap may have relocated a
@@ -195,22 +219,33 @@ class GameState: ObservableObject {
             MusicEngine.shared.triggerMineHit()
 
             let absorbed: Bool
-            if gameMode == .hardcore {
+            if gameMode == .practice {
+                // Practice mode: mine hits are always absorbed, no consequences
+                absorbed = true
+            } else if gameMode == .hardcore {
                 let shields = perkStacks(.mineShield)
                 if shields > 0 {
                     runPerks[RunPerk.mineShield.rawValue] = shields - 1
+                    absorbed = true
+                } else if profile.lastStandUnlocked && !profile.lastStandUsedThisRun {
+                    profile.lastStandUsedThisRun = true
                     absorbed = true
                 } else {
                     isGameOver = true
                     absorbed = false
                 }
             } else if gameMode == .endless {
-                livesRemaining -= 1
-                if livesRemaining <= 0 {
-                    livesRemaining = 0
-                    isGameOver = true
+                if profile.lastStandUnlocked && !profile.lastStandUsedThisRun && livesRemaining <= 1 {
+                    profile.lastStandUsedThisRun = true
+                    absorbed = true
+                } else {
+                    livesRemaining -= 1
+                    if livesRemaining <= 0 {
+                        livesRemaining = 0
+                        isGameOver = true
+                    }
+                    absorbed = livesRemaining > 0
                 }
-                absorbed = livesRemaining > 0
             } else {
                 absorbed = false
             }
@@ -351,12 +386,26 @@ class GameState: ObservableObject {
 
     func useUndoMine(sectorCoord: SectorCoordinate) {
         if isGameOver || isPaused { return }
+        // Cursed sectors block the undoMine booster
+        if let sector = boardManager.sector(at: sectorCoord), sector.modifier == .cursed { return }
         if GameActions.useUndoMineBooster(sectorCoord: sectorCoord, gameState: self) {
             AudioManager.shared.play(.boosterUsed)
             HapticsManager.shared.play(.boosterRevealOne)
             onSectorReset?(sectorCoord)
             onSectorStatusChanged?(sectorCoord, .active)
             objectWillChange.send()
+        }
+    }
+
+    // MARK: - Achievements
+
+    func checkAchievements() {
+        for achievement in Achievement.all {
+            guard !profile.unlockedAchievements.contains(achievement.id) else { continue }
+            if achievement.condition(profile) {
+                profile.unlockedAchievements.append(achievement.id)
+                onAchievementUnlocked?(achievement)
+            }
         }
     }
 
@@ -402,17 +451,28 @@ class GameState: ObservableObject {
             onGemCollected?(sector.gemReward)
         }
 
-        // Update high scores
-        switch gameMode {
-        case .endless:
-            profile.highScoreEndless = max(profile.highScoreEndless, sectorsSolvedThisSession)
-        case .hardcore:
-            profile.highScoreHardcore = max(profile.highScoreHardcore, sectorsSolvedThisSession)
-        case .timed:
-            profile.highScoreTimed = max(profile.highScoreTimed, sectorsSolvedThisSession)
+        // Update high scores (not in practice mode)
+        if gameMode != .practice {
+            switch gameMode {
+            case .endless:
+                profile.highScoreEndless = max(profile.highScoreEndless, sectorsSolvedThisSession)
+            case .hardcore:
+                profile.highScoreHardcore = max(profile.highScoreHardcore, sectorsSolvedThisSession)
+            case .timed:
+                profile.highScoreTimed = max(profile.highScoreTimed, sectorsSolvedThisSession)
+            case .practice:
+                break
+            }
+            profile.totalSectorsSolved += 1
         }
-        profile.totalSectorsSolved += 1
+        if solveStreak > profile.maxSolveStreak {
+            profile.maxSolveStreak = solveStreak
+        }
+        if profile.level > profile.highestLevelReached {
+            profile.highestLevelReached = profile.level
+        }
 
+        checkAchievements()
         onSectorSolved?(coord)
         onSectorStatusChanged?(coord, .solved)
     }
@@ -437,15 +497,16 @@ class GameState: ObservableObject {
         difficultyTier = 0
         boardManager.difficultyBonus = 0.0
 
-        // Per-run boosters: base stock + headstart prestige bonus
+        // Per-run boosters: base stock + headstart prestige bonus + quick start blueprint
         let headstart = profile.headstartLevel
         runBoosters = [
-            BoosterType.revealOne.rawValue:   profile.revealOneCount + headstart,
+            BoosterType.revealOne.rawValue:   profile.revealOneCount + headstart + profile.quickStartLevel,
             BoosterType.solveSector.rawValue: profile.solveSectorCount + headstart,
             BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
         ]
         runPerks = [:]
         livesRemaining = maxLives
+        profile.lastStandUsedThisRun = false
         focusedSector = SectorCoordinate(x: 0, y: 0)
 
         // Apply density shield prestige

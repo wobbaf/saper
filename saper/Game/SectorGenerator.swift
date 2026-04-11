@@ -41,6 +41,38 @@ struct SectorGenerator {
 
         let sector = Sector(coordinate: coord, tiles: tiles, gemReward: gemReward)
         sector.density = density
+
+        // Piggy bank: 12% chance for one random non-mine tile to be a piggy bank
+        let piggyRoll = Double(rng.nextInt(upperBound: 10000)) / 10000.0
+        if piggyRoll < 0.12 {
+            var nonMineTiles: [(Int, Int)] = []
+            for row in 0..<size {
+                for col in 0..<size {
+                    if !tiles[row][col].hasMine {
+                        nonMineTiles.append((col, row))
+                    }
+                }
+            }
+            if !nonMineTiles.isEmpty {
+                let idx = rng.nextInt(upperBound: nonMineTiles.count)
+                let (px, py) = nonMineTiles[idx]
+                sector.tiles[py][px].isPiggyBank = true
+            }
+        }
+
+        // Sector modifier: 9% chance (only sectors beyond distance 2)
+        if coord.distanceFromOrigin > 2 {
+            let modRoll = Double(rng.nextInt(upperBound: 10000)) / 10000.0
+            if modRoll < 0.09 {
+                let modIdx = rng.nextInt(upperBound: SectorModifier.allCases.count)
+                sector.modifier = SectorModifier.allCases[modIdx]
+                // Charged: double the gem reward
+                if sector.modifier == .charged {
+                    sector.gemReward = max(1, sector.gemReward * 2 + 2)
+                }
+            }
+        }
+
         return sector
     }
 

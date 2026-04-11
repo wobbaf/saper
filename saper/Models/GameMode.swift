@@ -4,20 +4,23 @@ enum GameMode: String, Codable, CaseIterable {
     case endless
     case hardcore
     case timed
+    case practice
 
     var displayName: String {
         switch self {
-        case .endless: return "Endless"
+        case .endless:  return "Endless"
         case .hardcore: return "Hardcore"
-        case .timed: return "Timed"
+        case .timed:    return "Timed"
+        case .practice: return "Practice"
         }
     }
 
     var description: String {
         switch self {
-        case .endless: return "Explore the infinite board. No game over."
+        case .endless:  return "Explore the infinite board. No game over."
         case .hardcore: return "One mine hit = game over."
-        case .timed: return "3 minutes. Solve as many sectors as you can."
+        case .timed:    return "3 minutes. Solve as many sectors as you can."
+        case .practice: return "Infinite lives. No score tracking. Just explore."
         }
     }
 }

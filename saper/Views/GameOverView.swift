@@ -92,9 +92,10 @@ struct GameOverView: View {
 
     private func currentHighScore() -> Int {
         switch gameState.gameMode {
-        case .endless: return gameState.profile.highScoreEndless
+        case .endless:  return gameState.profile.highScoreEndless
         case .hardcore: return gameState.profile.highScoreHardcore
-        case .timed: return gameState.profile.highScoreTimed
+        case .timed:    return gameState.profile.highScoreTimed
+        case .practice: return 0
         }
     }
 }
