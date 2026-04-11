@@ -88,6 +88,19 @@ struct GameContainerView: View {
         .sheet(isPresented: $showShop) {
             ShopView(gameState: gameState)
         }
+        .confirmationDialog(
+            unlockDialogTitle,
+            isPresented: Binding(get: { gameState.pendingUnlockCoord != nil },
+                                 set: { if !$0 { gameState.pendingUnlockCoord = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Unlock (\(unlockDialogCost) 💎)", role: .none) {
+                gameState.confirmUnlockSector()
+            }
+            Button("Cancel", role: .cancel) {
+                gameState.pendingUnlockCoord = nil
+            }
+        }
         .onAppear {
             createScene()
         }
@@ -98,6 +111,21 @@ struct GameContainerView: View {
             Text("Your current progress will be lost.")
         }
         .statusBarHidden()
+    }
+
+    private var unlockDialogCost: Int {
+        guard let coord = gameState.pendingUnlockCoord else { return 0 }
+        return gameState.unlockCost(for: coord)
+    }
+
+    private var unlockDialogTitle: String {
+        guard let coord = gameState.pendingUnlockCoord,
+              let sector = gameState.boardManager.sector(at: coord) else { return "Unlock Sector" }
+        if sector.status == .locked {
+            return "Unlock Sector? (\(unlockDialogCost) 💎)"
+        } else {
+            return "Unlock Sector? (\(unlockDialogCost) 💎)"
+        }
     }
 
     private func createScene() {

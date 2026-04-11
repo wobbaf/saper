@@ -28,7 +28,9 @@ struct SectorGenerator {
             gemReward = 0
         }
 
-        return Sector(coordinate: coord, tiles: tiles, gemReward: gemReward)
+        let sector = Sector(coordinate: coord, tiles: tiles, gemReward: gemReward)
+        sector.density = density
+        return sector
     }
 
     /// Ensure the tile at (localX, localY) is safe by relocating any mine there.

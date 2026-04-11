@@ -40,8 +40,14 @@ class SectorNode: SKNode {
             width: sectorPixelSize,
             height: sectorPixelSize
         )
+        // Heat color: cyan at low density → orange → red at max density
+        let densityNorm = CGFloat(max(0, min(1, (sector.density - 0.10) / (Constants.maxDensity - 0.10))))
+        let br = CGFloat(min(1.0, densityNorm * 2.0))
+        let bg = CGFloat(max(0.1, 0.8 - densityNorm * 0.8))
+        let bb = CGFloat(max(0.0, 1.0 - densityNorm * 1.5))
+
         borderNode = SKShapeNode(rect: borderRect)
-        borderNode?.strokeColor = SKColor(red: 0.0, green: 0.8, blue: 1.0, alpha: 0.35)
+        borderNode?.strokeColor = SKColor(red: br, green: bg, blue: bb, alpha: 0.35)
         borderNode?.lineWidth = 1.5
         borderNode?.fillColor = .clear
         borderNode?.zPosition = -1
@@ -50,7 +56,7 @@ class SectorNode: SKNode {
             // Slow neon pulse on the grid line
             let dim = SKAction.customAction(withDuration: 2.0) { node, t in
                 let alpha = 0.20 + 0.18 * abs(sin(Double(t) * .pi / 2.0))
-                (node as? SKShapeNode)?.strokeColor = SKColor(red: 0.0, green: 0.8, blue: 1.0, alpha: alpha)
+                (node as? SKShapeNode)?.strokeColor = SKColor(red: br, green: bg, blue: bb, alpha: alpha)
             }
             border.run(SKAction.repeatForever(dim))
         }

@@ -152,12 +152,8 @@ class GameScene: SKScene {
             y: CGFloat(sectorCoord.originTileY) * Constants.tileSize + Constants.sectorPixelSize / 2
         )
         if gameState.profile.gems >= cost {
-            gameState.unlockSector(sectorCoord)
-            hudNode.showFloatingText(
-                "-\(cost) 💎",
-                at: center,
-                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1.0)
-            )
+            // Show confirmation dialog via SwiftUI before spending gems
+            gameState.pendingUnlockCoord = sectorCoord
         } else {
             // Not enough gems — flash the cost
             let needed = cost - gameState.profile.gems
@@ -288,6 +284,19 @@ class GameScene: SKScene {
 
         gameState.onDifficultyTierChanged = { [weak self] tier in
             self?.animateBackgroundToTier(tier)
+        }
+
+        gameState.onSectorUnlocked = { [weak self] coord, cost in
+            guard let self = self else { return }
+            let center = CGPoint(
+                x: CGFloat(coord.originTileX) * Constants.tileSize + Constants.sectorPixelSize / 2,
+                y: CGFloat(coord.originTileY) * Constants.tileSize + Constants.sectorPixelSize / 2
+            )
+            self.hudNode.showFloatingText(
+                "-\(cost) 💎",
+                at: center,
+                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1.0)
+            )
         }
     }
 
