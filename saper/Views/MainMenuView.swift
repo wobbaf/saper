@@ -73,15 +73,6 @@ struct MainMenuView: View {
 
                 // Game mode buttons
                 VStack(spacing: 16) {
-                    Button(action: onClassicMode) {
-                        modeRow(
-                            icon: "square.grid.3x3.topleft.filled",
-                            title: "Classic",
-                            subtitle: "Windows-style Minesweeper",
-                            borderColor: Color.gray.opacity(0.3)
-                        )
-                    }
-
                     ForEach(GameMode.allCases, id: \.self) { mode in
                         Button(action: { startGame(mode: mode) }) {
                             modeRow(
@@ -91,6 +82,15 @@ struct MainMenuView: View {
                                 borderColor: borderColorForMode(mode)
                             )
                         }
+                    }
+
+                    Button(action: onClassicMode) {
+                        modeRow(
+                            icon: "square.grid.3x3.topleft.filled",
+                            title: "Classic",
+                            subtitle: "Windows-style Minesweeper",
+                            borderColor: Color.gray.opacity(0.3)
+                        )
                     }
                 }
                 .padding(.horizontal, 30)

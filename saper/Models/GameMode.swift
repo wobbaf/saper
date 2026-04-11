@@ -2,13 +2,13 @@ import Foundation
 
 enum GameMode: String, Codable, CaseIterable {
     case endless
+    case practice
     case hardcore
     case timed
-    case practice
 
     var displayName: String {
         switch self {
-        case .endless:  return "Endless"
+        case .endless:  return "Play"
         case .hardcore: return "Hardcore"
         case .timed:    return "Timed"
         case .practice: return "Practice"
