@@ -6,11 +6,8 @@ struct MainMenuView: View {
     var onClassicMode: () -> Void = {}
     @Environment(\.colorScheme) private var colorScheme
     @State private var showSettings = false
-    @State private var showSkinPicker = false
     @State private var showLeaderboard = false
     @State private var showShop = false
-    @State private var showAchievements = false
-    @State private var showBlueprints = false
     @State private var animateTitle = false
     @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
@@ -78,7 +75,6 @@ struct MainMenuView: View {
                             modeRow(
                                 icon: iconForMode(mode),
                                 title: mode.displayName,
-                                subtitle: mode.description,
                                 borderColor: borderColorForMode(mode)
                             )
                         }
@@ -88,7 +84,6 @@ struct MainMenuView: View {
                         modeRow(
                             icon: "square.grid.3x3.topleft.filled",
                             title: "Classic",
-                            subtitle: "Windows-style Minesweeper",
                             borderColor: Color.gray.opacity(0.3)
                         )
                     }
@@ -105,14 +100,11 @@ struct MainMenuView: View {
                 }
                 .padding(.bottom, 20)
 
-                // Bottom buttons — row 1
-                HStack(spacing: 24) {
+                // Bottom buttons
+                HStack(spacing: 36) {
                     iconButton(icon: "gearshape.fill", label: "Settings", action: { showSettings = true })
                     iconButton(icon: "trophy.fill", label: "Scores", action: { showLeaderboard = true })
-                    iconButton(icon: "paintbrush.fill", label: "Skins", action: { showSkinPicker = true })
                     iconButton(icon: "arrow.up.circle.fill", label: "Upgrades", action: { showShop = true }, accent: true)
-                    iconButton(icon: "wrench.and.screwdriver.fill", label: "Blueprints", action: { showBlueprints = true })
-                    iconButton(icon: "medal.fill", label: "Medals", action: { showAchievements = true })
                 }
                 .padding(.bottom, 30)
             }
@@ -120,20 +112,11 @@ struct MainMenuView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(gameState: gameState)
         }
-        .sheet(isPresented: $showSkinPicker) {
-            SkinPickerView(gameState: gameState)
-        }
         .sheet(isPresented: $showLeaderboard) {
             LeaderboardView(gameState: gameState)
         }
         .sheet(isPresented: $showShop) {
             PrestigeShopView(gameState: gameState)
-        }
-        .sheet(isPresented: $showAchievements) {
-            AchievementListView(gameState: gameState)
-        }
-        .sheet(isPresented: $showBlueprints) {
-            BlueprintShopView(gameState: gameState)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
@@ -169,19 +152,14 @@ struct MainMenuView: View {
     }
 
     @ViewBuilder
-    private func modeRow(icon: String, title: String, subtitle: String, borderColor: Color) -> some View {
+    private func modeRow(icon: String, title: String, borderColor: Color) -> some View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 20))
                 .frame(width: 30)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundColor(isDark ? .white.opacity(0.5) : .secondary)
-            }
+            Text(title)
+                .font(.system(size: 18, weight: .bold, design: .monospaced))
 
             Spacer()
 
