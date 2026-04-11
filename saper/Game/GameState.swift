@@ -40,6 +40,7 @@ class GameState: ObservableObject {
     var onSectorReset: ((SectorCoordinate) -> Void)?
     var onDifficultyTierChanged: ((Int) -> Void)?
     var onSectorUnlocked: ((SectorCoordinate, Int) -> Void)?
+    var onTileGemCollected: ((Int, Int, Int) -> Void)?  // globalX, globalY, amount
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -148,6 +149,24 @@ class GameState: ObservableObject {
             }
 
             onTilesRevealed?(revealed)
+
+            // Collect gems from revealed tiles
+            for pos in revealed {
+                let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
+                guard let sector = boardManager.sector(at: sc) else { continue }
+                let lx = pos.globalX - sc.originTileX
+                let ly = pos.globalY - sc.originTileY
+                guard !sector.tiles[ly][lx].gemCollected,
+                      sector.tiles[ly][lx].hasGem else { continue }
+                sector.tiles[ly][lx].gemCollected = true
+                let amount = 1
+                profile.gems += amount
+                gemsCollectedThisSession += amount
+                let _ = profile.addXP(Int(Double(Constants.xpPerGemFind) * xpMultiplier))
+                AudioManager.shared.playCompound(SoundEffect.gemChime)
+                HapticsManager.shared.play(.gemCollected)
+                onTileGemCollected?(pos.globalX, pos.globalY, amount)
+            }
 
             // If this was the sector's first tap, ensureSafeFirstTap may have relocated a
             // mine — refresh any already-revealed border tiles in neighbouring sectors.
@@ -371,23 +390,16 @@ class GameState: ObservableObject {
             MusicEngine.shared.triggerLevelUp()
         }
 
-        // Collect gems (base + prospector prestige + gem magnet run perk)
+        // Collect sector gem reward (base amount only, no modifiers)
         if let sector = boardManager.sector(at: coord),
            sector.gemReward > 0 && !sector.gemCollected {
             sector.gemCollected = true
-            let totalGems = sector.gemReward + profile.prospectorLevel + perkStacks(.gemMagnet)
-            profile.gems += totalGems
-            gemsCollectedThisSession += totalGems
+            profile.gems += sector.gemReward
+            gemsCollectedThisSession += sector.gemReward
             let _ = profile.addXP(Int(Double(sector.gemReward * Constants.xpPerGemFind) * xpMultiplier))
             AudioManager.shared.playCompound(SoundEffect.gemChime)
             HapticsManager.shared.play(.gemCollected)
-            onGemCollected?(totalGems)
-        } else if perkStacks(.gemMagnet) > 0 || profile.prospectorLevel > 0 {
-            // Gem magnet / prospector still fire even for sectors without a base gem reward
-            let bonus = perkStacks(.gemMagnet) + profile.prospectorLevel
-            profile.gems += bonus
-            gemsCollectedThisSession += bonus
-            onGemCollected?(bonus)
+            onGemCollected?(sector.gemReward)
         }
 
         // Update high scores

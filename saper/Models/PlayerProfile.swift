@@ -7,8 +7,8 @@ struct PlayerProfile: Codable {
     var revealOneCount: Int = 1
     var solveSectorCount: Int = 1
     var undoMineCount: Int = 3
-    var unlockedSkins: [SkinType] = [.space, .neonGrid]
-    var currentSkin: SkinType = .space
+    var unlockedSkins: [SkinType] = []
+    var currentSkin: SkinType = .classicLight
     var highScoreEndless: Int = 0
     var highScoreHardcore: Int = 0
     var highScoreTimed: Int = 0

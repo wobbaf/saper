@@ -282,6 +282,19 @@ class GameScene: SKScene {
 
         gameState.onGemCollected = { _ in }
 
+        gameState.onTileGemCollected = { [weak self] gx, gy, amount in
+            guard let self = self else { return }
+            let worldPos = CGPoint(
+                x: CGFloat(gx) * Constants.tileSize + Constants.tileSize / 2,
+                y: CGFloat(gy) * Constants.tileSize + Constants.tileSize / 2 + 12
+            )
+            self.hudNode.showFloatingText(
+                "+\(amount) 💎",
+                at: worldPos,
+                color: SKColor(red: 0.3, green: 0.9, blue: 1.0, alpha: 1.0)
+            )
+        }
+
         gameState.onDifficultyTierChanged = { [weak self] tier in
             self?.animateBackgroundToTier(tier)
         }
@@ -305,6 +318,12 @@ class GameScene: SKScene {
     /// Background colours for each difficulty tier — deep blue → purple → crimson.
     private func backgroundColorForTier(_ tier: Int, skin: SkinType) -> SKColor {
         switch skin {
+        case .classicLight:
+            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
+            return SKColor(red: 0.78 - t * 0.10, green: 0.78 - t * 0.15, blue: 0.78 - t * 0.20, alpha: 1)
+        case .classicDark:
+            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
+            return SKColor(red: 0.10 + t * 0.12, green: max(0.02, 0.10 - t * 0.06), blue: max(0.02, 0.10 - t * 0.06), alpha: 1)
         case .space:
             // r rises (blue → red), b falls
             let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)

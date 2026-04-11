@@ -122,10 +122,10 @@ class TileRenderer {
         }
 
         if number > 0 {
-            let color = SKColor.numberColor(for: number)
+            let color = skin.numberColor(for: number)
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
-            if skin != .minecraft {
+            if skin.useNeonGlow {
                 // Three-layer neon glow — intensity scales with number value
                 let glowStrength = CGFloat(0.12 + Float(number) * 0.055)
                 let glowLayers: [(CGFloat, CGFloat)] = [(42, 0.55), (56, 0.28), (70, 0.11)]

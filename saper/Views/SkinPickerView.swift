@@ -68,17 +68,21 @@ struct SkinPickerView: View {
 
     private func skinPreviewColor(_ skin: SkinType) -> Color {
         switch skin {
-        case .space:     return Color(red: 0.12, green: 0.12, blue: 0.22)
-        case .neonGrid:  return Color(red: 0.08, green: 0.08, blue: 0.08)
-        case .minecraft: return Color(red: 0.40, green: 0.62, blue: 0.18)
+        case .classicLight: return Color(red: 0.86, green: 0.86, blue: 0.86)
+        case .classicDark:  return Color(red: 0.24, green: 0.24, blue: 0.24)
+        case .space:        return Color(red: 0.12, green: 0.12, blue: 0.22)
+        case .neonGrid:     return Color(red: 0.08, green: 0.08, blue: 0.08)
+        case .minecraft:    return Color(red: 0.40, green: 0.62, blue: 0.18)
         }
     }
 
     private func skinBorderColor(_ skin: SkinType) -> Color {
         switch skin {
-        case .space:     return Color(red: 0.25, green: 0.25, blue: 0.45)
-        case .neonGrid:  return Color(red: 0.0,  green: 0.8,  blue: 1.0)
-        case .minecraft: return Color(red: 0.29, green: 0.60, blue: 0.05)
+        case .classicLight: return Color(red: 0.55, green: 0.55, blue: 0.55)
+        case .classicDark:  return Color(red: 0.40, green: 0.40, blue: 0.40)
+        case .space:        return Color(red: 0.25, green: 0.25, blue: 0.45)
+        case .neonGrid:     return Color(red: 0.0,  green: 0.8,  blue: 1.0)
+        case .minecraft:    return Color(red: 0.29, green: 0.60, blue: 0.05)
         }
     }
 
