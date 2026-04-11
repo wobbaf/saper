@@ -278,7 +278,16 @@ class GameScene: SKScene {
             self?.handleSectorReset(coord: coord)
         }
 
-        gameState.onGemCollected = { _ in }
+        gameState.onGemCollected = { [weak self] amount, coord in
+            guard let self = self else { return }
+            let centerX = CGFloat(coord.originTileX) * Constants.tileSize + Constants.sectorPixelSize / 2
+            let centerY = CGFloat(coord.originTileY) * Constants.tileSize + Constants.sectorPixelSize / 2
+            self.hudNode.showFloatingText(
+                "+\(amount) gems",
+                at: CGPoint(x: centerX, y: centerY),
+                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
+            )
+        }
 
         gameState.onTileGemCollected = { [weak self] gx, gy, amount in
             guard let self = self else { return }
@@ -450,18 +459,8 @@ class GameScene: SKScene {
     }
 
     private func handleSectorSolved(coord: SectorCoordinate) {
-        guard let sector = gameState.boardManager.sector(at: coord) else { return }
-
         let centerX = CGFloat(coord.originTileX) * Constants.tileSize + Constants.sectorPixelSize / 2
         let centerY = CGFloat(coord.originTileY) * Constants.tileSize + Constants.sectorPixelSize / 2
-
-        if sector.gemReward > 0 {
-            hudNode.showFloatingText(
-                "+\(sector.gemReward) gems",
-                at: CGPoint(x: centerX, y: centerY),
-                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
-            )
-        }
 
         hudNode.showFloatingText(
             "+\(Constants.xpPerSectorSolve) XP",
