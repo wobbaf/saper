@@ -117,7 +117,7 @@ class BoardManager {
                 return dist
             }
             for neighbor in current.neighbors {
-                if !visited.contains(neighbor) {
+                if !visited.contains(neighbor) && sectors[neighbor] != nil {
                     visited.insert(neighbor)
                     queue.append((neighbor, dist + 1))
                 }
