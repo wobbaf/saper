@@ -455,7 +455,7 @@ class GameScene: SKScene {
         let centerX = CGFloat(coord.originTileX) * Constants.tileSize + Constants.sectorPixelSize / 2
         let centerY = CGFloat(coord.originTileY) * Constants.tileSize + Constants.sectorPixelSize / 2
 
-        if sector.gemReward > 0 && !sector.gemCollected {
+        if sector.gemReward > 0 {
             hudNode.showFloatingText(
                 "+\(sector.gemReward) gems",
                 at: CGPoint(x: centerX, y: centerY),

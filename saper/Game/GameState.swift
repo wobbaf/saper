@@ -133,14 +133,16 @@ class GameState: ObservableObject {
 
         switch result {
         case .safe(let revealed):
-            let xpGained = Int(Double(revealed.count * Constants.xpPerTileReveal) * xpMultiplier)
             tilesRevealedThisSession += revealed.count
-            let leveledUp = profile.addXP(xpGained)
-            if leveledUp && pendingPerkOffer.isEmpty {
-                pendingPerkOffer = RunPerk.generateOffer(gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
-                AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
-                HapticsManager.shared.play(.levelUp)
-                MusicEngine.shared.triggerLevelUp()
+            if gameMode != .practice {
+                let xpGained = Int(Double(revealed.count * Constants.xpPerTileReveal) * xpMultiplier)
+                let leveledUp = profile.addXP(xpGained)
+                if leveledUp && pendingPerkOffer.isEmpty {
+                    pendingPerkOffer = RunPerk.generateOffer(gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
+                    AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
+                    HapticsManager.shared.play(.levelUp)
+                    MusicEngine.shared.triggerLevelUp()
+                }
             }
 
             // Audio/haptic feedback for reveals
@@ -158,37 +160,39 @@ class GameState: ObservableObject {
 
             onTilesRevealed?(revealed)
 
-            // Tile gems + piggy bank tiles
-            for pos in revealed {
-                let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
-                guard let sector = boardManager.sector(at: sc) else { continue }
-                let lx = pos.globalX - sc.originTileX
-                let ly = pos.globalY - sc.originTileY
-                guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { continue }
-                // Tile gem
-                if sector.tiles[ly][lx].hasGem && !sector.tiles[ly][lx].gemCollected {
-                    sector.tiles[ly][lx].gemCollected = true
-                    let amount = 1
-                    profile.gems += amount
-                    profile.totalGemsCollected += amount
-                    gemsCollectedThisSession += amount
-                    let _ = profile.addXP(Int(Double(Constants.xpPerGemFind) * xpMultiplier))
-                    AudioManager.shared.playCompound(SoundEffect.gemChime)
-                    HapticsManager.shared.play(.gemCollected)
-                    onTileGemCollected?(pos.globalX, pos.globalY, amount)
-                }
-                // Piggy bank
-                if sector.tiles[ly][lx].isPiggyBank && !sector.tiles[ly][lx].piggyBankCollected {
-                    var tile = sector.tiles[ly][lx]
-                    tile.piggyBankCollected = true
-                    sector.setTile(tile, atLocalX: lx, localY: ly)
-                    let amount = 5 + Int.random(in: 0...5)
-                    profile.gems += amount
-                    profile.totalGemsCollected += amount
-                    profile.totalPiggyBanksFound += 1
-                    gemsCollectedThisSession += amount
-                    onPiggyBankFound?(pos.globalX, pos.globalY, amount)
-                    checkAchievements()
+            if gameMode != .practice {
+                // Tile gems + piggy bank tiles
+                for pos in revealed {
+                    let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
+                    guard let sector = boardManager.sector(at: sc) else { continue }
+                    let lx = pos.globalX - sc.originTileX
+                    let ly = pos.globalY - sc.originTileY
+                    guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { continue }
+                    // Tile gem
+                    if sector.tiles[ly][lx].hasGem && !sector.tiles[ly][lx].gemCollected {
+                        sector.tiles[ly][lx].gemCollected = true
+                        let amount = 1
+                        profile.gems += amount
+                        profile.totalGemsCollected += amount
+                        gemsCollectedThisSession += amount
+                        let _ = profile.addXP(Int(Double(Constants.xpPerGemFind) * xpMultiplier))
+                        AudioManager.shared.playCompound(SoundEffect.gemChime)
+                        HapticsManager.shared.play(.gemCollected)
+                        onTileGemCollected?(pos.globalX, pos.globalY, amount)
+                    }
+                    // Piggy bank
+                    if sector.tiles[ly][lx].isPiggyBank && !sector.tiles[ly][lx].piggyBankCollected {
+                        var tile = sector.tiles[ly][lx]
+                        tile.piggyBankCollected = true
+                        sector.setTile(tile, atLocalX: lx, localY: ly)
+                        let amount = 5 + Int.random(in: 0...5)
+                        profile.gems += amount
+                        profile.totalGemsCollected += amount
+                        profile.totalPiggyBanksFound += 1
+                        gemsCollectedThisSession += amount
+                        onPiggyBankFound?(pos.globalX, pos.globalY, amount)
+                        checkAchievements()
+                    }
                 }
             }
 
@@ -212,7 +216,7 @@ class GameState: ObservableObject {
                 }
             }
 
-        case .mine(let coord):
+        case .mine(let coord, let gx, let gy):
             solveStreak = 0
             AudioManager.shared.play(.mineExplosion)
             HapticsManager.shared.play(.mineHit)
@@ -251,8 +255,28 @@ class GameState: ObservableObject {
             }
 
             if !absorbed {
+                if let sector = boardManager.sector(at: coord) {
+                    sector.status = .locked
+                    sector.isModified = true
+                }
                 onMineHit?(coord)
                 onSectorStatusChanged?(coord, .locked)
+            } else {
+                // Show the hit mine briefly, then reset the tile so the player can continue
+                onTileStateChanged?(gx, gy, .mine)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                    guard let self = self else { return }
+                    let sc = SectorCoordinate(fromTileX: gx, tileY: gy)
+                    if let sector = self.boardManager.sector(at: sc) {
+                        let lx = gx - sc.originTileX
+                        let ly = gy - sc.originTileY
+                        if lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize {
+                            sector.tiles[ly][lx].state = .hidden
+                            sector.isModified = true
+                        }
+                    }
+                    self.onTileStateChanged?(gx, gy, .hidden)
+                }
             }
 
         case .alreadyRevealed:
@@ -318,7 +342,7 @@ class GameState: ObservableObject {
                 }
             }
 
-        case .mine(let coord):
+        case .mine(let coord, _, _):
             solveStreak = 0
             onMineHit?(coord)
             onSectorStatusChanged?(coord, .locked)
@@ -420,41 +444,41 @@ class GameState: ObservableObject {
         MusicEngine.shared.triggerSectorSolved()
         MusicEngine.shared.sectorsCompleted = sectorsSolvedThisSession
 
-        // Difficulty tier bump
-        let newTier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
-                         Constants.maxDifficultyTier)
-        if newTier > difficultyTier {
-            difficultyTier = newTier
-            boardManager.difficultyBonus = Double(newTier) * Constants.densityBonusPerTier
-            onDifficultyTierChanged?(newTier)
-        }
-
-        let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier * streakXpMultiplier)
-        let leveledUp = profile.addXP(xpGained)
-        if leveledUp && pendingPerkOffer.isEmpty {
-            let offerCount = profile.extraChoiceUnlocked ? 4 : 3
-            pendingPerkOffer = RunPerk.generateOffer(count: offerCount, gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
-            AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
-            HapticsManager.shared.play(.levelUp)
-            MusicEngine.shared.triggerLevelUp()
-        }
-
-        // Collect sector gem reward
-        if let sector = boardManager.sector(at: coord),
-           sector.gemReward > 0 && !sector.gemCollected {
-            sector.gemCollected = true
-            let reward = sector.gemReward
-            profile.gems += reward
-            profile.totalGemsCollected += reward
-            gemsCollectedThisSession += reward
-            let _ = profile.addXP(Int(Double(reward * Constants.xpPerGemFind) * xpMultiplier))
-            AudioManager.shared.playCompound(SoundEffect.gemChime)
-            HapticsManager.shared.play(.gemCollected)
-            onGemCollected?(reward)
-        }
-
-        // Update high scores (not in practice mode)
         if gameMode != .practice {
+            // Difficulty tier bump
+            let newTier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
+                             Constants.maxDifficultyTier)
+            if newTier > difficultyTier {
+                difficultyTier = newTier
+                boardManager.difficultyBonus = Double(newTier) * Constants.densityBonusPerTier
+                onDifficultyTierChanged?(newTier)
+            }
+
+            let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier * streakXpMultiplier)
+            let leveledUp = profile.addXP(xpGained)
+            if leveledUp && pendingPerkOffer.isEmpty {
+                let offerCount = profile.extraChoiceUnlocked ? 4 : 3
+                pendingPerkOffer = RunPerk.generateOffer(count: offerCount, gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
+                AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
+                HapticsManager.shared.play(.levelUp)
+                MusicEngine.shared.triggerLevelUp()
+            }
+
+            // Collect sector gem reward
+            if let sector = boardManager.sector(at: coord),
+               sector.gemReward > 0 && !sector.gemCollected {
+                sector.gemCollected = true
+                let reward = sector.gemReward
+                profile.gems += reward
+                profile.totalGemsCollected += reward
+                gemsCollectedThisSession += reward
+                let _ = profile.addXP(Int(Double(reward * Constants.xpPerGemFind) * xpMultiplier))
+                AudioManager.shared.playCompound(SoundEffect.gemChime)
+                HapticsManager.shared.play(.gemCollected)
+                onGemCollected?(reward)
+            }
+
+            // Update high scores
             switch gameMode {
             case .endless:
                 profile.highScoreEndless = max(profile.highScoreEndless, sectorsSolvedThisSession)
@@ -466,15 +490,17 @@ class GameState: ObservableObject {
                 break
             }
             profile.totalSectorsSolved += 1
-        }
-        if solveStreak > profile.maxSolveStreak {
-            profile.maxSolveStreak = solveStreak
-        }
-        if profile.level > profile.highestLevelReached {
-            profile.highestLevelReached = profile.level
+
+            if solveStreak > profile.maxSolveStreak {
+                profile.maxSolveStreak = solveStreak
+            }
+            if profile.level > profile.highestLevelReached {
+                profile.highestLevelReached = profile.level
+            }
+
+            checkAchievements()
         }
 
-        checkAchievements()
         onSectorSolved?(coord)
         onSectorStatusChanged?(coord, .solved)
     }
@@ -500,12 +526,17 @@ class GameState: ObservableObject {
         boardManager.difficultyBonus = 0.0
 
         // Per-run boosters: base stock + headstart prestige bonus + quick start blueprint
-        let headstart = profile.headstartLevel
-        runBoosters = [
-            BoosterType.revealOne.rawValue:   profile.revealOneCount + headstart + profile.quickStartLevel,
-            BoosterType.solveSector.rawValue: profile.solveSectorCount + headstart,
-            BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
-        ]
+        // Practice mode has no boosters — it's pure minesweeper
+        if mode == .practice {
+            runBoosters = [:]
+        } else {
+            let headstart = profile.headstartLevel
+            runBoosters = [
+                BoosterType.revealOne.rawValue:   profile.revealOneCount + headstart + profile.quickStartLevel,
+                BoosterType.solveSector.rawValue: profile.solveSectorCount + headstart,
+                BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
+            ]
+        }
         runPerks = [:]
         livesRemaining = maxLives
         profile.lastStandUsedThisRun = false

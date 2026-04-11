@@ -17,49 +17,65 @@ struct HUDOverlayView: View {
     @State private var xpBarGlowing: Bool = false
 
     var body: some View {
-        ZStack(alignment: .top) {
-            // Non-interactive background shapes for layout
-            VStack(spacing: 0) {
-                xpBar
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+        Group {
+            if gameState.gameMode == .practice {
+                // Practice mode: minimal HUD — just a pause button
+                ZStack(alignment: .top) {
+                    VStack(spacing: 0) {
+                        pillBackground {
+                            actionButton(icon: "pause.fill", color: .white, action: { gameState.pauseGame() })
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.top, 8)
+                        Spacer()
+                    }
+                }
+            } else {
+                ZStack(alignment: .top) {
+                    // Non-interactive background shapes for layout
+                    VStack(spacing: 0) {
+                        xpBar
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
 
-                topPillBackground
-                    .padding(.horizontal, 12)
-                    .padding(.top, 5)
+                        topPillBackground
+                            .padding(.horizontal, 12)
+                            .padding(.top, 5)
 
-                Spacer()
-            }
-            .allowsHitTesting(false)
-
-            // Interactive top pill
-            VStack(spacing: 0) {
-                Spacer().frame(height: 8 + 16 + 5) // xpBar height offset
-                interactiveTopPill
-                    .padding(.horizontal, 12)
-                Spacer()
-            }
-
-            // Hardcore vignette
-            if gameState.gameMode == .hardcore {
-                Rectangle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [.clear, .red.opacity(0.15)]),
-                            center: .center,
-                            startRadius: 100,
-                            endRadius: 400
-                        )
-                    )
-                    .ignoresSafeArea()
+                        Spacer()
+                    }
                     .allowsHitTesting(false)
+
+                    // Interactive top pill
+                    VStack(spacing: 0) {
+                        Spacer().frame(height: 8 + 16 + 5) // xpBar height offset
+                        interactiveTopPill
+                            .padding(.horizontal, 12)
+                        Spacer()
+                    }
+
+                    // Hardcore vignette
+                    if gameState.gameMode == .hardcore {
+                        Rectangle()
+                            .fill(
+                                RadialGradient(
+                                    gradient: Gradient(colors: [.clear, .red.opacity(0.15)]),
+                                    center: .center,
+                                    startRadius: 100,
+                                    endRadius: 400
+                                )
+                            )
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                    }
+                }
+                // Bottom booster pill pinned to safe area bottom
+                .overlay(alignment: .bottom) {
+                    interactiveBottomPill
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 12)
+                }
             }
-        }
-        // Bottom booster pill pinned to safe area bottom
-        .overlay(alignment: .bottom) {
-            interactiveBottomPill
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
         }
         .onAppear {
             prevRevealOne = gameState.revealOneAvailable
