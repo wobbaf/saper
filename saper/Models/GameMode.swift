@@ -1,6 +1,7 @@
 import Foundation
 
-enum GameMode: String, Codable, CaseIterable {
+enum GameMode: String, Codable, CaseIterable, Identifiable {
+    var id: Self { self }
     case endless
     case practice
     case hardcore
