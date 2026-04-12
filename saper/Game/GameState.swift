@@ -280,57 +280,95 @@ class GameState: ObservableObject {
     }
 
     /// For each newly revealed numbered tile, if remaining hidden neighbors == remaining mine count, flag them all.
-    func applyAutoFlags(around revealed: [FloodFill.TilePosition]) {
+    /// Flags all hidden tiles in a solved sector (every hidden tile is a mine by definition).
+    func autoFlagSector(_ coord: SectorCoordinate) {
+        guard let sector = boardManager.sector(at: coord) else { return }
         var flagged: [(Int, Int)] = []
+        for ly in 0..<Constants.sectorSize {
+            for lx in 0..<Constants.sectorSize {
+                let tile = sector.tiles[ly][lx]
+                guard tile.state == .hidden else { continue }
+                let gx = coord.originTileX + lx
+                let gy = coord.originTileY + ly
+                if let newState = GameActions.toggleFlag(globalX: gx, globalY: gy, gameState: self),
+                   newState == .flagged {
+                    flagged.append((gx, gy))
+                }
+            }
+        }
+        for (gx, gy) in flagged { onTileStateChanged?(gx, gy, .flagged) }
+        if !flagged.isEmpty {
+            AudioManager.shared.play(.flagPlace)
+            HapticsManager.shared.play(.flagPlaced)
+        }
+    }
 
+    /// After reveals, checks all numbered tiles adjacent to the newly-revealed area.
+    /// If a numbered tile's remaining hidden neighbors == remaining mine count, flags them all.
+    func applyAutoFlags(around revealed: [FloodFill.TilePosition]) {
+        // Collect candidate numbered tiles: the revealed tiles themselves + their revealed neighbors.
+        var candidates: Set<TileKey> = []
         for pos in revealed {
-            let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
-            guard let sector = boardManager.sector(at: sc) else { continue }
-            let lx = pos.globalX - sc.originTileX
-            let ly = pos.globalY - sc.originTileY
-            guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { continue }
-            let tile = sector.tiles[ly][lx]
-            guard tile.state == .revealed, tile.adjacentMineCount > 0 else { continue }
-
-            var hiddenNeighbors: [(Int, Int)] = []
-            var existingFlags = 0
-
+            addRevealedNumberedTile(pos.globalX, pos.globalY, to: &candidates)
             for dx in -1...1 {
                 for dy in -1...1 {
                     if dx == 0 && dy == 0 { continue }
-                    let nx = pos.globalX + dx
-                    let ny = pos.globalY + dy
+                    addRevealedNumberedTile(pos.globalX + dx, pos.globalY + dy, to: &candidates)
+                }
+            }
+        }
+
+        var flagged: [(Int, Int)] = []
+        for key in candidates {
+            let (cx, cy) = (key.x, key.y)
+            let sc = SectorCoordinate(fromTileX: cx, tileY: cy)
+            guard let sector = boardManager.sector(at: sc) else { continue }
+            let lx = cx - sc.originTileX; let ly = cy - sc.originTileY
+            let tile = sector.tiles[ly][lx]
+
+            var hiddenNeighbors: [(Int, Int)] = []
+            var existingFlags = 0
+            for dx in -1...1 {
+                for dy in -1...1 {
+                    if dx == 0 && dy == 0 { continue }
+                    let nx = cx + dx; let ny = cy + dy
                     let nsc = SectorCoordinate(fromTileX: nx, tileY: ny)
                     guard let nSector = boardManager.sector(at: nsc) else { continue }
-                    let nlx = nx - nsc.originTileX
-                    let nly = ny - nsc.originTileY
+                    let nlx = nx - nsc.originTileX; let nly = ny - nsc.originTileY
                     guard nlx >= 0, nlx < Constants.sectorSize, nly >= 0, nly < Constants.sectorSize else { continue }
                     let nTile = nSector.tiles[nly][nlx]
-                    if nTile.state == .flagged {
-                        existingFlags += 1
-                    } else if nTile.state == .hidden {
-                        hiddenNeighbors.append((nx, ny))
-                    }
+                    if nTile.state == .flagged { existingFlags += 1 }
+                    else if nTile.state == .hidden { hiddenNeighbors.append((nx, ny)) }
                 }
             }
 
-            // Auto-flag only when all remaining hidden neighbors must be mines
-            if hiddenNeighbors.count == tile.adjacentMineCount - existingFlags && !hiddenNeighbors.isEmpty {
+            let remaining = tile.adjacentMineCount - existingFlags
+            if remaining > 0 && hiddenNeighbors.count == remaining {
                 for (nx, ny) in hiddenNeighbors {
-                    if let newState = GameActions.toggleFlag(globalX: nx, globalY: ny, gameState: self),
-                       newState == .flagged {
+                    if let s = GameActions.toggleFlag(globalX: nx, globalY: ny, gameState: self), s == .flagged {
                         flagged.append((nx, ny))
                     }
                 }
             }
         }
 
-        for (nx, ny) in flagged {
-            onTileStateChanged?(nx, ny, .flagged)
-        }
+        for (nx, ny) in flagged { onTileStateChanged?(nx, ny, .flagged) }
         if !flagged.isEmpty {
             AudioManager.shared.play(.flagPlace)
             HapticsManager.shared.play(.flagPlaced)
+        }
+    }
+
+    private struct TileKey: Hashable { let x: Int; let y: Int }
+
+    private func addRevealedNumberedTile(_ gx: Int, _ gy: Int, to set: inout Set<TileKey>) {
+        let sc = SectorCoordinate(fromTileX: gx, tileY: gy)
+        guard let sector = boardManager.sector(at: sc) else { return }
+        let lx = gx - sc.originTileX; let ly = gy - sc.originTileY
+        guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { return }
+        let tile = sector.tiles[ly][lx]
+        if tile.state == .revealed && tile.adjacentMineCount > 0 {
+            set.insert(TileKey(x: gx, y: gy))
         }
     }
 
@@ -518,6 +556,11 @@ class GameState: ObservableObject {
     private func handleSectorSolved(_ coord: SectorCoordinate) {
         sectorsSolvedThisSession += 1
         solveStreak += 1
+
+        // All remaining hidden tiles in a solved sector are mines — flag them.
+        if profile.autoFlagEnabled {
+            autoFlagSector(coord)
+        }
 
         AudioManager.shared.playCompound(SoundEffect.sectorSolvedChord)
         HapticsManager.shared.play(.sectorSolved)
