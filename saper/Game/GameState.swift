@@ -587,20 +587,20 @@ class GameState: ObservableObject {
 
     /// Explicitly resets the board and clears any saved game. The only way to discard a save.
     func resetBoard(mode: GameMode, startingDifficultyBonus: Double = 0) {
-        GamePersistence.clearSave()
+        GamePersistence.clearSave(for: mode)
         startGame(mode: mode, startingDifficultyBonus: startingDifficultyBonus)
     }
 
 
     /// Resumes an endless or hardcore game from a saved board state.
     /// Returns true if a matching save was found and restored.
-    func resumeFromSave() -> Bool {
-        guard GamePersistence.hasSave() else { return false }
+    func resumeFromSave(mode: GameMode) -> Bool {
+        guard GamePersistence.hasSave(for: mode) else { return false }
 
         boardManager.reset()
-        guard let saveData = GamePersistence.loadBoard(into: boardManager) else { return false }
+        guard let saveData = GamePersistence.loadBoard(into: boardManager, mode: mode) else { return false }
         guard saveData.gameMode == .endless || saveData.gameMode == .hardcore else {
-            GamePersistence.clearSave()
+            GamePersistence.clearSave(for: mode)
             return false
         }
 

@@ -130,7 +130,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                if GamePersistence.hasSave() {
+                if GamePersistence.hasSave(for: .endless) || GamePersistence.hasSave(for: .hardcore) {
                     Section("Game") {
                         Button(role: .destructive) {
                             showResetSaveConfirmation = true
@@ -222,7 +222,10 @@ struct SettingsView: View {
                 }
             }
             .alert("Reset Saved Game?", isPresented: $showResetSaveConfirmation) {
-                Button("Reset", role: .destructive) { GamePersistence.clearSave() }
+                Button("Reset", role: .destructive) {
+                    GamePersistence.clearSave(for: .endless)
+                    GamePersistence.clearSave(for: .hardcore)
+                }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Your saved board will be permanently deleted.")
