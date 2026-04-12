@@ -25,10 +25,10 @@ struct PauseMenuView: View {
                     .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
 
                 VStack(spacing: 8) {
-                    StatRow(label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)")
-                    StatRow(label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)")
-                    StatRow(label: "Gems Found", value: "\(gameState.gemsCollectedThisSession)")
-                    StatRow(label: "Mode", value: gameState.gameMode.displayName)
+                    StatRow(label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)", theme: theme)
+                    StatRow(label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)", theme: theme)
+                    StatRow(label: "Gems Found",     value: "\(gameState.gemsCollectedThisSession)", theme: theme)
+                    StatRow(label: "Mode",           value: gameState.gameMode.displayName,          theme: theme)
                 }
                 .padding(20)
                 .background(theme.cardBackground)
@@ -75,16 +75,17 @@ struct PauseMenuView: View {
 struct StatRow: View {
     let label: String
     let value: String
+    let theme: SkinUITheme
 
     var body: some View {
         HStack {
             Text(label)
                 .font(.system(size: 14, design: .monospaced))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(theme.primaryTextColor.opacity(0.6))
             Spacer()
             Text(value)
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryTextColor)
         }
     }
 }
