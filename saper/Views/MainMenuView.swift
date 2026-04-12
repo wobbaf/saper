@@ -128,8 +128,8 @@ struct MainMenuView: View {
             gameState.startGame(mode: mode)
             return
         }
-        if GamePersistence.savedGameMode() == mode && gameState.resumeFromSave() {
-            // Auto-resume — nothing more to do
+        if GamePersistence.hasMeaningfulSave(for: mode) && gameState.resumeFromSave() {
+            // Auto-resume — player had actual progress
         } else {
             pendingMode = mode
         }

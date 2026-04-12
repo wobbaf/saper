@@ -98,4 +98,12 @@ struct GamePersistence {
         struct ModePeek: Decodable { let gameMode: GameMode }
         return (try? JSONDecoder().decode(ModePeek.self, from: data))?.gameMode
     }
+
+    /// Returns true only when the save has a matching mode AND the player has revealed at least one tile.
+    static func hasMeaningfulSave(for mode: GameMode) -> Bool {
+        guard let data = try? Data(contentsOf: saveURL) else { return false }
+        struct Peek: Decodable { let gameMode: GameMode; let tilesRevealed: Int }
+        guard let peek = try? JSONDecoder().decode(Peek.self, from: data) else { return false }
+        return peek.gameMode == mode && peek.tilesRevealed > 0
+    }
 }
