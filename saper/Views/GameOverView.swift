@@ -54,7 +54,7 @@ struct GameOverView: View {
                         .padding(.vertical, 16)
                         .background(
                             LinearGradient(
-                                colors: [theme.accentColor.opacity(0.35), theme.secondaryColor.opacity(0.35)],
+                                colors: [theme.accentColor.opacity(0.55), theme.secondaryColor.opacity(0.55)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -62,7 +62,7 @@ struct GameOverView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(theme.accentColor.opacity(0.5), lineWidth: 1)
+                                .stroke(theme.accentColor.opacity(0.7), lineWidth: 1)
                         )
                     }
 

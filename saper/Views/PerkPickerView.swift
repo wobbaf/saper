@@ -79,11 +79,11 @@ private struct PerkCard: View {
                 // Icon with layered glow
                 ZStack {
                     Circle()
-                        .fill(perk.color.opacity(0.35))
+                        .fill(perk.color.opacity(0.55))
                         .frame(width: 56, height: 56)
                         .blur(radius: 8)
                     Circle()
-                        .fill(perk.color.opacity(0.18))
+                        .fill(perk.color.opacity(0.30))
                         .frame(width: 56, height: 56)
                     Image(systemName: perk.iconName)
                         .font(.system(size: 24, weight: .semibold))
@@ -112,13 +112,13 @@ private struct PerkCard: View {
                 ZStack {
                     // Soft colour fill
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(perk.color.opacity(0.12))
+                        .fill(perk.color.opacity(0.22))
                     // Neon border — pulses
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(perk.color.opacity(borderGlow ? 0.9 : 0.5), lineWidth: 1.5)
                     // Outer glow
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(perk.color.opacity(borderGlow ? 0.35 : 0.15), lineWidth: 6)
+                        .stroke(perk.color.opacity(borderGlow ? 0.5 : 0.25), lineWidth: 6)
                         .blur(radius: 6)
                 }
             )
