@@ -18,6 +18,7 @@ struct GamePersistence {
         let sectorsSolved: Int
         let tilesRevealed: Int
         let gemsCollected: Int
+        let livesRemaining: Int?
         let runBoosters: [String: Int]?
         let runPerks: [String: Int]?
         let startingDifficultyBonus: Double?
@@ -28,7 +29,7 @@ struct GamePersistence {
         return docs.appendingPathComponent("board_state.json")
     }
 
-    static func saveBoard(boardManager: BoardManager, gameMode: GameMode, sectorsSolved: Int, tilesRevealed: Int, gemsCollected: Int, runBoosters: [String: Int] = [:], runPerks: [String: Int] = [:], startingDifficultyBonus: Double = 0) {
+    static func saveBoard(boardManager: BoardManager, gameMode: GameMode, sectorsSolved: Int, tilesRevealed: Int, gemsCollected: Int, livesRemaining: Int = 0, runBoosters: [String: Int] = [:], runPerks: [String: Int] = [:], startingDifficultyBonus: Double = 0) {
         var sectorDataList: [SectorSaveData] = []
 
         for (coord, sector) in boardManager.sectors where sector.isModified {
@@ -49,6 +50,7 @@ struct GamePersistence {
             sectorsSolved: sectorsSolved,
             tilesRevealed: tilesRevealed,
             gemsCollected: gemsCollected,
+            livesRemaining: livesRemaining,
             runBoosters: runBoosters,
             runPerks: runPerks,
             startingDifficultyBonus: startingDifficultyBonus

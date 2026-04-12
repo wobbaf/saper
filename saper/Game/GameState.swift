@@ -610,6 +610,7 @@ class GameState: ObservableObject {
         sectorsSolvedThisSession = saveData.sectorsSolved
         tilesRevealedThisSession = saveData.tilesRevealed
         gemsCollectedThisSession = saveData.gemsCollected
+        livesRemaining = saveData.livesRemaining ?? maxLives
         runBoosters = saveData.runBoosters ?? [
             BoosterType.solveSector.rawValue: profile.solveSectorCount,
             BoosterType.undoMine.rawValue:    profile.undoMineCount,
