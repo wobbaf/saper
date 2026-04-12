@@ -5,5 +5,5 @@ enum TileState: Int, Codable {
     case revealed
     case mine
     case flagged
-    case question
+    case question  // legacy — treated as hidden on decode
 }
