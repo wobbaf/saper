@@ -5,6 +5,8 @@ struct SkinPickerView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
 
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
+
     var body: some View {
         NavigationView {
             List {
@@ -58,9 +60,11 @@ struct SkinPickerView: View {
                 }
             }
             .navigationTitle("Skins")
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(theme.accentColor)
                 }
             }
         }

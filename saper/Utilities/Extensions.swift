@@ -1,4 +1,17 @@
 import SpriteKit
+import SwiftUI
+
+extension View {
+    /// Sets the navigation bar color scheme — uses toolbarColorScheme on iOS 16+,
+    /// falls back to environment colorScheme on iOS 15.
+    func navigationBarColorScheme(_ scheme: ColorScheme) -> some View {
+        if #available(iOS 16.0, *) {
+            return AnyView(self.toolbarColorScheme(scheme, for: .navigationBar))
+        } else {
+            return AnyView(self.environment(\.colorScheme, scheme))
+        }
+    }
+}
 
 extension CGPoint {
     func distance(to other: CGPoint) -> CGFloat {
@@ -18,12 +31,3 @@ extension CGPoint {
     }
 }
 
-extension SKColor {
-    static func numberColor(for count: Int) -> SKColor {
-        guard count >= 0 && count < Constants.numberColors.count else {
-            return .white
-        }
-        let (r, g, b) = Constants.numberColors[count]
-        return SKColor(red: r, green: g, blue: b, alpha: 1)
-    }
-}

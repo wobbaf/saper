@@ -7,6 +7,8 @@ struct SettingsView: View {
     @State private var showResetSaveConfirmation = false
     @State private var showSkinPicker = false
 
+    private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
+
     // Developer mode — only available in Debug and TestFlight builds
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @State private var devTapCount = 0
@@ -212,9 +214,11 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(theme.accentColor)
                 }
             }
             .alert("Reset Saved Game?", isPresented: $showResetSaveConfirmation) {

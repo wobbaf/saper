@@ -52,7 +52,9 @@ struct PauseMenuView: View {
             Button("Quit", role: .destructive, action: onMainMenu)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Your current progress will be lost.")
+            Text(gameState.gameMode == .endless || gameState.gameMode == .hardcore
+                 ? "Your run will be saved. You can resume it later."
+                 : "Your current session will end.")
         }
     }
 }
