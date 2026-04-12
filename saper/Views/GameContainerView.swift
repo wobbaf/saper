@@ -61,7 +61,8 @@ struct GameContainerView: View {
                             gameMode: gameState.gameMode,
                             sectorsSolved: gameState.sectorsSolvedThisSession,
                             tilesRevealed: gameState.tilesRevealedThisSession,
-                            gemsCollected: gameState.gemsCollectedThisSession
+                            gemsCollected: gameState.gemsCollectedThisSession,
+                            startingDifficultyBonus: gameState.startingDifficultyBonus
                         )
                     }
                     gameState.isPlaying = false

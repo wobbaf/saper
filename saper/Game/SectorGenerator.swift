@@ -7,7 +7,19 @@ struct SectorGenerator {
     static func generate(at coord: SectorCoordinate, globalSeed: UInt64, difficultyBonus: Double = 0.0, densityReduction: Double = 0.0) -> Sector {
         let rng = SeededRandom.rng(globalSeed: globalSeed, sector: coord)
         let distance = coord.distanceFromOrigin
-        let density = max(0.05, min(Constants.baseDensity + Double(distance) * Constants.densityMultiplier + difficultyBonus - densityReduction, Constants.maxDensity))
+
+        // Pre-roll the modifier before tile generation so cursed sectors get a real density boost
+        var prerolledModifier: SectorModifier? = nil
+        if distance > 2 {
+            let modRoll = Double(rng.nextInt(upperBound: 10000)) / 10000.0
+            if modRoll < 0.09 {
+                let modIdx = rng.nextInt(upperBound: SectorModifier.allCases.count)
+                prerolledModifier = SectorModifier.allCases[modIdx]
+            }
+        }
+
+        let cursedBonus: Double = prerolledModifier == .cursed ? 0.12 : 0.0
+        let density = max(0.05, min(Constants.baseDensity + Double(distance) * Constants.densityMultiplier + difficultyBonus + cursedBonus - densityReduction, Constants.maxDensity))
 
         let size = Constants.sectorSize
         var tiles = [[Tile]](repeating: [Tile](repeating: Tile(), count: size), count: size)
@@ -60,17 +72,10 @@ struct SectorGenerator {
             }
         }
 
-        // Sector modifier: 9% chance (only sectors beyond distance 2)
-        if coord.distanceFromOrigin > 2 {
-            let modRoll = Double(rng.nextInt(upperBound: 10000)) / 10000.0
-            if modRoll < 0.09 {
-                let modIdx = rng.nextInt(upperBound: SectorModifier.allCases.count)
-                sector.modifier = SectorModifier.allCases[modIdx]
-                // Charged: double the gem reward
-                if sector.modifier == .charged {
-                    sector.gemReward = max(1, sector.gemReward * 2 + 2)
-                }
-            }
+        // Apply pre-rolled modifier
+        sector.modifier = prerolledModifier
+        if sector.modifier == .charged {
+            sector.gemReward = max(1, sector.gemReward * 2 + 2)
         }
 
         return sector
