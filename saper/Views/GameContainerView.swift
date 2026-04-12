@@ -73,6 +73,7 @@ struct GameContainerView: View {
                 GameOverView(gameState: gameState) {
                     restartGame()
                 } onMainMenu: {
+                    GamePersistence.clearSave()
                     gameState.isPlaying = false
                 }
             }
