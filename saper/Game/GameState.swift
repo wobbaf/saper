@@ -17,6 +17,8 @@ class GameState: ObservableObject {
     var focusedSector: SectorCoordinate = SectorCoordinate(x: 0, y: 0)
     /// Current difficulty tier (0 = base). Increments every sectorsPerDifficultyTier sectors solved.
     @Published var difficultyTier: Int = 0
+    /// Flat density bonus chosen at run start (stacks on top of tier ramp).
+    private(set) var startingDifficultyBonus: Double = 0
     /// Consecutive sectors solved without hitting a mine. Resets on mine hit.
     @Published var solveStreak: Int = 0
     /// Set to show gem-unlock confirmation dialog before spending gems.
@@ -466,7 +468,7 @@ class GameState: ObservableObject {
                              Constants.maxDifficultyTier)
             if newTier > difficultyTier {
                 difficultyTier = newTier
-                boardManager.difficultyBonus = Double(newTier) * Constants.densityBonusPerTier
+                boardManager.difficultyBonus = startingDifficultyBonus + Double(newTier) * Constants.densityBonusPerTier
                 onDifficultyTierChanged?(newTier)
             }
 
@@ -526,7 +528,7 @@ class GameState: ObservableObject {
 
     // MARK: - Game Lifecycle
 
-    func startGame(mode: GameMode) {
+    func startGame(mode: GameMode, startingDifficultyBonus: Double = 0) {
         gameMode = mode
         isGameOver = false
         isPaused = false
@@ -542,7 +544,8 @@ class GameState: ObservableObject {
         profile.xp = 0
         profile.level = 1
         difficultyTier = 0
-        boardManager.difficultyBonus = 0.0
+        self.startingDifficultyBonus = startingDifficultyBonus
+        boardManager.difficultyBonus = startingDifficultyBonus
 
         // Per-run boosters: base stock + headstart prestige bonus + quick start blueprint
         // Practice mode has no boosters — it's pure minesweeper
@@ -584,9 +587,9 @@ class GameState: ObservableObject {
     }
 
     /// Explicitly resets the board and clears any saved game. The only way to discard a save.
-    func resetBoard(mode: GameMode) {
+    func resetBoard(mode: GameMode, startingDifficultyBonus: Double = 0) {
         GamePersistence.clearSave()
-        startGame(mode: mode)
+        startGame(mode: mode, startingDifficultyBonus: startingDifficultyBonus)
     }
 
 
@@ -621,7 +624,8 @@ class GameState: ObservableObject {
         let tier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
                       Constants.maxDifficultyTier)
         difficultyTier = tier
-        boardManager.difficultyBonus = Double(tier) * Constants.densityBonusPerTier
+        startingDifficultyBonus = saveData.startingDifficultyBonus ?? 0
+        boardManager.difficultyBonus = startingDifficultyBonus + Double(tier) * Constants.densityBonusPerTier
         boardManager.densityReduction = Double(profile.densityShieldLevel) * 0.03
 
         syncAudioHaptics()

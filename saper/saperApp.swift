@@ -45,7 +45,8 @@ struct saperApp: App {
                 tilesRevealed: gameState.tilesRevealedThisSession,
                 gemsCollected: gameState.gemsCollectedThisSession,
                 runBoosters: gameState.runBoosters,
-                runPerks: gameState.runPerks
+                runPerks: gameState.runPerks,
+                startingDifficultyBonus: gameState.startingDifficultyBonus
             )
         }
     }

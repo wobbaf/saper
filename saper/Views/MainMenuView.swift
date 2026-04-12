@@ -11,6 +11,7 @@ struct MainMenuView: View {
     @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
     @State private var showResumeAlert = false
+    @State private var showDifficultyPicker = false
 
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
@@ -114,11 +115,19 @@ struct MainMenuView: View {
                 titleGlowPhase = true
             }
         }
+        .sheet(isPresented: $showDifficultyPicker) {
+            if let mode = pendingMode {
+                DifficultyPickerSheet(mode: mode, theme: theme) { bonus in
+                    showDifficultyPicker = false
+                    gameState.resetBoard(mode: mode, startingDifficultyBonus: bonus)
+                }
+            }
+        }
         .alert("Resume Game?", isPresented: $showResumeAlert, presenting: pendingMode) { mode in
             Button("Resume") {
                 if !gameState.resumeFromSave() { gameState.startGame(mode: mode) }
             }
-            Button("New Game", role: .destructive) { gameState.resetBoard(mode: mode) }
+            Button("New Game", role: .destructive) { showDifficultyPicker = true }
             Button("Cancel", role: .cancel) { pendingMode = nil }
         } message: { mode in
             Text("You have a saved \(mode.displayName) game in progress.")
@@ -126,16 +135,15 @@ struct MainMenuView: View {
     }
 
     private func startGame(mode: GameMode) {
-        if mode == .practice {
+        if mode != .endless && mode != .hardcore {
             gameState.startGame(mode: mode)
             return
         }
-        if (mode == .endless || mode == .hardcore),
-           GamePersistence.savedGameMode() == mode {
-            pendingMode = mode
+        pendingMode = mode
+        if GamePersistence.savedGameMode() == mode {
             showResumeAlert = true
         } else {
-            gameState.startGame(mode: mode)
+            showDifficultyPicker = true
         }
     }
 
@@ -215,6 +223,109 @@ struct StatBadge: View {
         .padding(.vertical, 6)
         .background(cardBg)
         .cornerRadius(8)
+    }
+}
+
+// MARK: - Difficulty Picker
+
+private struct DifficultyOption {
+    let name: String
+    let description: String
+    let bonus: Double
+    let color: Color
+}
+
+private let difficultyOptions: [DifficultyOption] = [
+    .init(name: "Normal",    description: "Gradual ramp. Good starting point.",  bonus: 0.00, color: .green),
+    .init(name: "Hard",      description: "Moderate density from the start.",    bonus: 0.15, color: .orange),
+    .init(name: "Insane",    description: "High density. Little breathing room.", bonus: 0.30, color: .red),
+    .init(name: "Nightmare", description: "Near-maximum mines. No mercy.",        bonus: 0.45, color: .purple),
+]
+
+struct DifficultyPickerSheet: View {
+    let mode: GameMode
+    let theme: SkinUITheme
+    let onSelect: (Double) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                theme.backgroundColors[0].ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    Text("Starting density affects how many mines\nappear in every sector from turn one.")
+                        .font(.system(size: 12))
+                        .foregroundColor(theme.secondaryTextColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 16)
+
+                    VStack(spacing: 12) {
+                        ForEach(difficultyOptions, id: \.name) { option in
+                            Button(action: { onSelect(option.bonus) }) {
+                                HStack(spacing: 16) {
+                                    Circle()
+                                        .fill(option.color.opacity(0.2))
+                                        .frame(width: 44, height: 44)
+                                        .overlay(
+                                            Circle().stroke(option.color.opacity(0.6), lineWidth: 1.5)
+                                        )
+                                        .overlay(
+                                            Text(densityLabel(option.bonus))
+                                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                                .foregroundColor(option.color)
+                                        )
+
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(option.name)
+                                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                            .foregroundColor(theme.primaryTextColor)
+                                        Text(option.description)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(theme.secondaryTextColor)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(option.color.opacity(0.7))
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(theme.cardBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 14)
+                                                .stroke(option.color.opacity(0.2), lineWidth: 1)
+                                        )
+                                )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
+                    Spacer()
+                }
+            }
+            .navigationTitle("Choose Difficulty")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(theme.secondaryTextColor)
+                }
+            }
+        }
+    }
+
+    private func densityLabel(_ bonus: Double) -> String {
+        let base = 0.15 + bonus
+        return "\(Int(base * 100))%+"
     }
 }
 
