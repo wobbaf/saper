@@ -4,9 +4,10 @@ struct PlayerProfile: Codable {
     var gems: Int = 0
     var xp: Int = 0
     var level: Int = 1
-    var revealOneCount: Int = 1
     var solveSectorCount: Int = 1
     var undoMineCount: Int = 3
+    var mineShieldCount: Int = 0
+    var refillHeartCount: Int = 0
     var unlockedSkins: [SkinType] = []
     var currentSkin: SkinType = .classicLight
     var highScoreEndless: Int = 0
@@ -26,28 +27,6 @@ struct PlayerProfile: Codable {
     var maxSolveStreak: Int = 0
     var totalPiggyBanksFound: Int = 0
     var highestLevelReached: Int = 0
-
-    // Blueprint upgrades
-    var quickStartLevel: Int = 0
-    var lastStandUnlocked: Bool = false
-    var streakSavantUnlocked: Bool = false
-    var lastStandUsedThisRun: Bool = false
-
-    func blueprintLevel(for upgrade: BlueprintUpgrade) -> Int {
-        switch upgrade {
-        case .quickStart:   return quickStartLevel
-        case .lastStand:    return lastStandUnlocked ? 1 : 0
-        case .streakSavant: return streakSavantUnlocked ? 1 : 0
-        }
-    }
-
-    mutating func applyBlueprint(_ upgrade: BlueprintUpgrade) {
-        switch upgrade {
-        case .quickStart:   quickStartLevel += 1
-        case .lastStand:    lastStandUnlocked = true
-        case .streakSavant: streakSavantUnlocked = true
-        }
-    }
 
     // Prestige upgrades (permanent, affect every run)
     var headstartLevel: Int = 0       // 0–3: +1 starting booster per level

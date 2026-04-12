@@ -55,9 +55,10 @@ class GameState: ObservableObject {
 
     // MARK: - Run perk helpers
 
-    var revealOneAvailable: Int { runBoosters[BoosterType.revealOne.rawValue] ?? 0 }
     var solveSectorAvailable: Int { runBoosters[BoosterType.solveSector.rawValue] ?? 0 }
     var undoMineAvailable: Int { runBoosters[BoosterType.undoMine.rawValue] ?? 0 }
+    var mineShieldAvailable: Int { runBoosters[BoosterType.mineShield.rawValue] ?? 0 }
+    var refillHeartAvailable: Int { runBoosters[BoosterType.refillHeart.rawValue] ?? 0 }
 
     func perkStacks(_ perk: RunPerk) -> Int { runPerks[perk.rawValue] ?? 0 }
     func hasPerk(_ perk: RunPerk) -> Bool { perkStacks(perk) > 0 }
@@ -70,10 +71,9 @@ class GameState: ObservableObject {
         return runBonus * prestigeBonus
     }
 
-    /// Streak bonus: +10% XP per sector in current streak, capped at 2× (3× with Streak Savant blueprint).
+    /// Streak bonus: +10% XP per sector in current streak, capped at 2×.
     var streakXpMultiplier: Double {
-        let cap = profile.streakSavantUnlocked ? 3.0 : 2.0
-        return min(1.0 + Double(max(0, solveStreak - 1)) * 0.1, cap)
+        return min(1.0 + Double(max(0, solveStreak - 1)) * 0.1, 2.0)
     }
     var sectorUnlockCost: Int { hasPerk(.sectorDiscount) ? 3 : Constants.sectorUnlockCost }
 
@@ -98,18 +98,21 @@ class GameState: ObservableObject {
 
     func applyPerk(_ perk: RunPerk) {
         switch perk {
-        case .revealOneBooster:
-            runBoosters[BoosterType.revealOne.rawValue, default: 0] += 1
         case .solveSectorBooster:
             runBoosters[BoosterType.solveSector.rawValue, default: 0] += 1
         case .undoMineBooster:
             runBoosters[BoosterType.undoMine.rawValue, default: 0] += 1
-        case .refillHeart:
-            livesRemaining = min(livesRemaining + 1, maxLives)
         default:
             runPerks[perk.rawValue, default: 0] += 1
         }
         pendingPerkOffer = []
+        objectWillChange.send()
+    }
+
+    func useRefillHeart() {
+        guard gameMode == .endless, refillHeartAvailable > 0, livesRemaining < maxLives else { return }
+        runBoosters[BoosterType.refillHeart.rawValue, default: 0] -= 1
+        livesRemaining = min(livesRemaining + 1, maxLives)
         objectWillChange.send()
     }
 
@@ -372,20 +375,6 @@ class GameState: ObservableObject {
         objectWillChange.send()
     }
 
-    func useRevealOne(sectorCoord: SectorCoordinate) {
-        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
-        if let pos = GameActions.useRevealOneBooster(sectorCoord: sectorCoord, gameState: self) {
-            AudioManager.shared.play(.boosterUsed)
-            HapticsManager.shared.play(.boosterRevealOne)
-            tilesRevealedThisSession += 1
-            onTilesRevealed?([pos])
-            if GameActions.checkSectorCompletion(sectorCoord, gameState: self) {
-                handleSectorSolved(sectorCoord)
-            }
-            objectWillChange.send()
-        }
-    }
-
     func useSolveSector(sectorCoord: SectorCoordinate) {
         if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         let revealed = GameActions.useSolveSectorBooster(sectorCoord: sectorCoord, gameState: self)
@@ -437,19 +426,13 @@ class GameState: ObservableObject {
 
     // MARK: - Mine absorption helper
 
-    /// Checks and consumes a mine-absorbing effect (Mine Shield or Last Stand).
+    /// Checks and consumes a mine-absorbing effect (Mine Shield booster or practice mode).
     /// Returns true if the hit is absorbed — no sector lock, no life deducted.
     private func checkAndConsumeAbsorber() -> Bool {
         if gameMode == .practice { return true }
-        let shields = perkStacks(.mineShield)
+        let shields = mineShieldAvailable
         if shields > 0 {
-            runPerks[RunPerk.mineShield.rawValue] = shields - 1
-            return true
-        }
-        let onLastLifeInEndless = gameMode == .endless && livesRemaining <= 1
-        if profile.lastStandUnlocked && !profile.lastStandUsedThisRun &&
-           (gameMode == .hardcore || onLastLifeInEndless) {
-            profile.lastStandUsedThisRun = true
+            runBoosters[BoosterType.mineShield.rawValue] = shields - 1
             return true
         }
         return false
@@ -563,21 +546,21 @@ class GameState: ObservableObject {
         self.startingDifficultyBonus = startingDifficultyBonus
         boardManager.difficultyBonus = startingDifficultyBonus
 
-        // Per-run boosters: base stock + headstart prestige bonus + quick start blueprint
+        // Per-run boosters: base stock + headstart prestige bonus
         // Practice mode has no boosters — it's pure minesweeper
         if mode == .practice {
             runBoosters = [:]
         } else {
             let headstart = profile.headstartLevel
             runBoosters = [
-                BoosterType.revealOne.rawValue:   profile.revealOneCount + headstart + profile.quickStartLevel,
                 BoosterType.solveSector.rawValue: profile.solveSectorCount + headstart,
-                BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart
+                BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart,
+                BoosterType.mineShield.rawValue:  profile.mineShieldCount + headstart,
+                BoosterType.refillHeart.rawValue: profile.refillHeartCount
             ]
         }
         runPerks = [:]
         livesRemaining = maxLives
-        profile.lastStandUsedThisRun = false
         focusedSector = SectorCoordinate(x: 0, y: 0)
 
         // Apply density shield prestige
@@ -628,9 +611,10 @@ class GameState: ObservableObject {
         tilesRevealedThisSession = saveData.tilesRevealed
         gemsCollectedThisSession = saveData.gemsCollected
         runBoosters = saveData.runBoosters ?? [
-            BoosterType.revealOne.rawValue:   profile.revealOneCount,
             BoosterType.solveSector.rawValue: profile.solveSectorCount,
-            BoosterType.undoMine.rawValue:    profile.undoMineCount
+            BoosterType.undoMine.rawValue:    profile.undoMineCount,
+            BoosterType.mineShield.rawValue:  profile.mineShieldCount,
+            BoosterType.refillHeart.rawValue: profile.refillHeartCount
         ]
         runPerks = saveData.runPerks ?? [:]
         pendingPerkOffer = []

@@ -6,12 +6,14 @@ struct HUDOverlayView: View {
     var onShopTapped: () -> Void = {}
 
     // Booster bounce animation state
-    @State private var revealOneBounce: Bool = false
     @State private var solveSectorBounce: Bool = false
     @State private var undoMineBounce: Bool = false
-    @State private var prevRevealOne: Int = 0
+    @State private var mineShieldBounce: Bool = false
+    @State private var refillHeartBounce: Bool = false
     @State private var prevSolveSector: Int = 0
     @State private var prevUndoMine: Int = 0
+    @State private var prevMineShield: Int = 0
+    @State private var prevRefillHeart: Int = 0
 
     // XP bar level-up glow
     @State private var xpBarGlowing: Bool = false
@@ -78,9 +80,10 @@ struct HUDOverlayView: View {
             }
         }
         .onAppear {
-            prevRevealOne = gameState.revealOneAvailable
             prevSolveSector = gameState.solveSectorAvailable
             prevUndoMine = gameState.undoMineAvailable
+            prevMineShield = gameState.mineShieldAvailable
+            prevRefillHeart = gameState.refillHeartAvailable
         }
     }
 
@@ -112,28 +115,20 @@ struct HUDOverlayView: View {
     private var interactiveBottomPill: some View {
         pillBackground {
             HStack(spacing: 0) {
-                boosterButton(icon: "eye.fill",             count: gameState.revealOneAvailable,   color: .yellow, action: useRevealOne)
-                    .scaleEffect(revealOneBounce ? 1.3 : 1.0)
-                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: revealOneBounce)
                 boosterButton(icon: "checkmark.seal.fill",  count: gameState.solveSectorAvailable, color: .purple, action: useSolveSector)
                     .scaleEffect(solveSectorBounce ? 1.3 : 1.0)
                     .animation(.spring(response: 0.2, dampingFraction: 0.4), value: solveSectorBounce)
                 boosterButton(icon: "arrow.uturn.backward", count: gameState.undoMineAvailable,    color: .orange, action: useUndoMine)
                     .scaleEffect(undoMineBounce ? 1.3 : 1.0)
                     .animation(.spring(response: 0.2, dampingFraction: 0.4), value: undoMineBounce)
-
-                let shields = gameState.perkStacks(.mineShield)
-                if shields > 0 {
-                    pillDivider
-                    shieldIndicator(count: shields)
-                }
-            }
-            .onChange(of: gameState.revealOneAvailable) { newVal in
-                if newVal > prevRevealOne {
-                    revealOneBounce = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { revealOneBounce = false }
-                }
-                prevRevealOne = newVal
+                boosterButton(icon: "shield.fill",          count: gameState.mineShieldAvailable,  color: .blue,   action: {})
+                    .disabled(true)
+                    .scaleEffect(mineShieldBounce ? 1.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: mineShieldBounce)
+                boosterButton(icon: "heart.fill",           count: gameState.refillHeartAvailable, color: .pink,   action: useRefillHeart)
+                    .scaleEffect(refillHeartBounce ? 1.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: refillHeartBounce)
+                    .opacity(gameState.gameMode == .endless ? 1 : 0.3)
             }
             .onChange(of: gameState.solveSectorAvailable) { newVal in
                 if newVal > prevSolveSector {
@@ -148,6 +143,20 @@ struct HUDOverlayView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { undoMineBounce = false }
                 }
                 prevUndoMine = newVal
+            }
+            .onChange(of: gameState.mineShieldAvailable) { newVal in
+                if newVal > prevMineShield {
+                    mineShieldBounce = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { mineShieldBounce = false }
+                }
+                prevMineShield = newVal
+            }
+            .onChange(of: gameState.refillHeartAvailable) { newVal in
+                if newVal > prevRefillHeart {
+                    refillHeartBounce = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { refillHeartBounce = false }
+                }
+                prevRefillHeart = newVal
             }
         }
     }
@@ -300,24 +309,7 @@ struct HUDOverlayView: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: - Shield indicator
-
-    private func shieldIndicator(count: Int) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: "shield.fill")
-                .font(.system(size: 13))
-            Text("\(count)")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
-        }
-        .foregroundColor(.blue)
-        .frame(minWidth: 44, minHeight: 36)
-    }
-
     // MARK: - Actions
-
-    private func useRevealOne() {
-        gameState.useRevealOne(sectorCoord: gameState.focusedSector)
-    }
 
     private func useSolveSector() {
         gameState.useSolveSector(sectorCoord: gameState.focusedSector)
@@ -338,5 +330,9 @@ struct HUDOverlayView: View {
                 }
             }
         }
+    }
+
+    private func useRefillHeart() {
+        gameState.useRefillHeart()
     }
 }
