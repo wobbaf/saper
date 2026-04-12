@@ -182,8 +182,8 @@ enum SkinType: String, Codable, CaseIterable {
                 accentColor:       Color(red: 0.0, green: 0.0, blue: 0.65),
                 secondaryColor:    Color(red: 0.6, green: 0.0, blue: 0.0),
                 showStarfield:     false,
-                cardBackground:    Color.black.opacity(0.09),
-                buttonBackground:  Color.black.opacity(0.07),
+                cardBackground:    Color(white: 0.91),
+                buttonBackground:  Color(white: 0.88),
                 primaryTextColor:  Color(red: 0.05, green: 0.05, blue: 0.05),
                 secondaryTextColor:Color.black.opacity(0.5),
                 isDark:            false
@@ -258,8 +258,8 @@ enum SkinType: String, Codable, CaseIterable {
                 accentColor:       Color(red: 0.80, green: 0.80, blue: 0.80),
                 secondaryColor:    Color(red: 0.58, green: 0.58, blue: 0.58),
                 showStarfield:     false,
-                cardBackground:    Color.white.opacity(0.08),
-                buttonBackground:  Color.white.opacity(0.06),
+                cardBackground:    Color.white.opacity(0.16),
+                buttonBackground:  Color.white.opacity(0.12),
                 primaryTextColor:  .white,
                 secondaryTextColor:Color.white.opacity(0.55),
                 isDark:            true
@@ -320,8 +320,8 @@ enum SkinType: String, Codable, CaseIterable {
                 accentColor:       .cyan,
                 secondaryColor:    .purple,
                 showStarfield:     true,
-                cardBackground:    Color.white.opacity(0.08),
-                buttonBackground:  Color.white.opacity(0.06),
+                cardBackground:    Color.white.opacity(0.16),
+                buttonBackground:  Color.white.opacity(0.12),
                 primaryTextColor:  .white,
                 secondaryTextColor:Color.white.opacity(0.55),
                 isDark:            true
@@ -386,8 +386,8 @@ enum SkinType: String, Codable, CaseIterable {
                 accentColor:       Color(red: 0.0, green: 0.8, blue: 1.0),
                 secondaryColor:    Color(red: 0.0, green: 0.9, blue: 0.4),
                 showStarfield:     false,
-                cardBackground:    Color.white.opacity(0.05),
-                buttonBackground:  Color.white.opacity(0.04),
+                cardBackground:    Color.white.opacity(0.14),
+                buttonBackground:  Color.white.opacity(0.10),
                 primaryTextColor:  Color(red: 0.0, green: 0.9, blue: 0.4),
                 secondaryTextColor:Color.white.opacity(0.55),
                 isDark:            true

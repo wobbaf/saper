@@ -170,10 +170,10 @@ struct HUDOverlayView: View {
             .padding(.vertical, 10)
             .background(
                 Capsule()
-                    .fill(Color.black.opacity(0.55))
+                    .fill(Color.black.opacity(0.78))
                     .overlay(
                         Capsule()
-                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                            .stroke(Color.white.opacity(0.20), lineWidth: 1)
                     )
             )
     }

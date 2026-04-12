@@ -92,11 +92,16 @@ struct SkinPickerView: View {
 
     private func selectSkin(_ skin: SkinType) {
         if skin.isFree || gameState.profile.unlockedSkins.contains(skin) {
-            gameState.profile.currentSkin = skin
+            applySkin(skin)
         } else if gameState.profile.gems >= skin.gemCost {
             gameState.profile.gems -= skin.gemCost
             gameState.profile.unlockedSkins.append(skin)
-            gameState.profile.currentSkin = skin
+            applySkin(skin)
         }
+    }
+
+    private func applySkin(_ skin: SkinType) {
+        gameState.profile.currentSkin = skin
+        gameState.profile.appearanceMode = skin.definition.isDark ? 2 : 1
     }
 }
