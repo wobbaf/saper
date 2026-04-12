@@ -10,6 +10,7 @@ struct MainMenuView: View {
     @State private var animateTitle = false
     @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
+    @State private var pendingBonus: Double? = nil
     @State private var showDifficultyPicker = false
 
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
@@ -114,11 +115,16 @@ struct MainMenuView: View {
                 titleGlowPhase = true
             }
         }
-        .sheet(isPresented: $showDifficultyPicker) {
+        .sheet(isPresented: $showDifficultyPicker, onDismiss: {
+            if let mode = pendingMode, let bonus = pendingBonus {
+                pendingBonus = nil
+                gameState.resetBoard(mode: mode, startingDifficultyBonus: bonus)
+            }
+        }) {
             if let mode = pendingMode {
                 DifficultyPickerSheet(mode: mode, theme: theme) { bonus in
+                    pendingBonus = bonus
                     showDifficultyPicker = false
-                    gameState.resetBoard(mode: mode, startingDifficultyBonus: bonus)
                 }
             }
         }
