@@ -183,7 +183,7 @@ enum SkinType: String, Codable, CaseIterable {
                 secondaryColor:    Color(red: 0.6, green: 0.0, blue: 0.0),
                 showStarfield:     false,
                 cardBackground:    Color(white: 0.91),
-                buttonBackground:  Color(white: 0.88),
+                buttonBackground:  Color(white: 0.82),
                 primaryTextColor:  Color(red: 0.05, green: 0.05, blue: 0.05),
                 secondaryTextColor:Color.black.opacity(0.5),
                 isDark:            false
