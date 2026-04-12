@@ -112,7 +112,7 @@ class GameState: ObservableObject {
     // MARK: - Game Actions
 
     func revealTile(globalX: Int, globalY: Int) {
-        if isGameOver || isPaused { return }
+        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
 
         let sectorCoord = SectorCoordinate(fromTileX: globalX, tileY: globalY)
 
@@ -290,7 +290,7 @@ class GameState: ObservableObject {
     }
 
     func toggleFlag(globalX: Int, globalY: Int) {
-        if isGameOver || isPaused { return }
+        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         if let newState = GameActions.toggleFlag(globalX: globalX, globalY: globalY, gameState: self) {
             switch newState {
             case .flagged:
@@ -308,7 +308,7 @@ class GameState: ObservableObject {
     }
 
     func chordReveal(globalX: Int, globalY: Int) {
-        if isGameOver || isPaused { return }
+        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
 
         let result = GameActions.chordReveal(
             globalX: globalX,
@@ -344,6 +344,12 @@ class GameState: ObservableObject {
 
         case .mine(let coord, _, _):
             solveStreak = 0
+            AudioManager.shared.play(.mineExplosion)
+            HapticsManager.shared.play(.mineHit)
+            if let sector = boardManager.sector(at: coord) {
+                sector.status = .locked
+                sector.isModified = true
+            }
             onMineHit?(coord)
             onSectorStatusChanged?(coord, .locked)
             if gameMode == .hardcore {
@@ -352,6 +358,16 @@ class GameState: ObservableObject {
                     runPerks[RunPerk.mineShield.rawValue] = shields - 1
                 } else {
                     isGameOver = true
+                }
+            } else if gameMode == .endless {
+                if profile.lastStandUnlocked && !profile.lastStandUsedThisRun && livesRemaining <= 1 {
+                    profile.lastStandUsedThisRun = true
+                } else {
+                    livesRemaining -= 1
+                    if livesRemaining <= 0 {
+                        livesRemaining = 0
+                        isGameOver = true
+                    }
                 }
             }
 
@@ -363,7 +379,7 @@ class GameState: ObservableObject {
     }
 
     func useRevealOne(sectorCoord: SectorCoordinate) {
-        if isGameOver || isPaused { return }
+        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         if let pos = GameActions.useRevealOneBooster(sectorCoord: sectorCoord, gameState: self) {
             AudioManager.shared.play(.boosterUsed)
             HapticsManager.shared.play(.boosterRevealOne)
@@ -377,7 +393,7 @@ class GameState: ObservableObject {
     }
 
     func useSolveSector(sectorCoord: SectorCoordinate) {
-        if isGameOver || isPaused { return }
+        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         let revealed = GameActions.useSolveSectorBooster(sectorCoord: sectorCoord, gameState: self)
         if !revealed.isEmpty {
             AudioManager.shared.play(.boosterUsed)
@@ -409,7 +425,7 @@ class GameState: ObservableObject {
     }
 
     func useUndoMine(sectorCoord: SectorCoordinate) {
-        if isGameOver || isPaused { return }
+        if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         // Cursed sectors block the undoMine booster
         if let sector = boardManager.sector(at: sectorCoord), sector.modifier == .cursed { return }
         if GameActions.useUndoMineBooster(sectorCoord: sectorCoord, gameState: self) {
