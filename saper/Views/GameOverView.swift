@@ -28,7 +28,7 @@ struct GameOverView: View {
                     ResultRow(icon: "square.grid.3x3.fill", label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)", color: .blue)
                     ResultRow(icon: "diamond.fill", label: "Gems Collected", value: "\(gameState.gemsCollectedThisSession)", color: theme.accentColor)
                     if gameState.gameMode == .endless {
-                        ResultRow(icon: "heart.fill", label: "Lives Lost", value: "\(3 - gameState.livesRemaining)", color: .pink)
+                        ResultRow(icon: "heart.fill", label: "Lives Lost", value: "\(gameState.maxLives - gameState.livesRemaining)", color: .pink)
                     }
 
                     Divider().background(Color.white.opacity(0.2))
