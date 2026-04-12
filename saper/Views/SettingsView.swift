@@ -68,6 +68,12 @@ struct SettingsView: View {
 
                 Section("Gameplay") {
                     Toggle("Auto-Flag Remaining Mines", isOn: $gameState.profile.autoFlagEnabled)
+                    Toggle("Flag-Only Mode", isOn: $gameState.profile.flagOnlyMode)
+                    if gameState.profile.flagOnlyMode {
+                        Text("Tap = flag/unflag  •  Long press = reveal  •  Tap number = chord")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 Section("Appearance") {

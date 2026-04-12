@@ -139,7 +139,14 @@ class GameScene: SKScene {
         let tile = sector.tiles[localY][localX]
 
         if tile.state == .revealed && tile.adjacentMineCount > 0 {
+            // Chord works the same in both modes
             gameState.chordReveal(globalX: globalX, globalY: globalY)
+        } else if gameState.profile.flagOnlyMode {
+            // Flag-only mode: tap toggles flag; long press reveals
+            if tile.state == .hidden || tile.state == .flagged {
+                lastFlagToggleTime = CACurrentMediaTime()
+                gameState.toggleFlag(globalX: globalX, globalY: globalY)
+            }
         } else if tile.state == .hidden {
             gameState.revealTile(globalX: globalX, globalY: globalY)
         }
@@ -174,8 +181,13 @@ class GameScene: SKScene {
         let worldPoint = viewPointToWorld(locationInView)
         let (globalX, globalY) = globalTileAt(worldPoint: worldPoint)
 
-        lastFlagToggleTime = CACurrentMediaTime()
-        gameState.toggleFlag(globalX: globalX, globalY: globalY)
+        if gameState.profile.flagOnlyMode {
+            // Flag-only mode: long press reveals
+            gameState.revealTile(globalX: globalX, globalY: globalY)
+        } else {
+            lastFlagToggleTime = CACurrentMediaTime()
+            gameState.toggleFlag(globalX: globalX, globalY: globalY)
+        }
     }
 
     // MARK: - Camera Changed
