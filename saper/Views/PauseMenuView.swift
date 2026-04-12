@@ -25,22 +25,22 @@ struct PauseMenuView: View {
                     .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
 
                 VStack(spacing: 8) {
-                    StatRow(label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)")
-                    StatRow(label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)")
-                    StatRow(label: "Gems Found", value: "\(gameState.gemsCollectedThisSession)")
-                    StatRow(label: "Mode", value: gameState.gameMode.displayName)
+                    StatRow(label: "Sectors Solved", value: "\(gameState.sectorsSolvedThisSession)", theme: theme)
+                    StatRow(label: "Tiles Revealed", value: "\(gameState.tilesRevealedThisSession)", theme: theme)
+                    StatRow(label: "Gems Found",     value: "\(gameState.gemsCollectedThisSession)", theme: theme)
+                    StatRow(label: "Mode",           value: gameState.gameMode.displayName,          theme: theme)
                 }
                 .padding(20)
                 .background(theme.cardBackground)
                 .cornerRadius(12)
 
                 VStack(spacing: 12) {
-                    MenuButton(title: "Resume", icon: "play.fill", color: theme.accentColor, action: onResume)
-                    MenuButton(title: "Shop", icon: "bag.fill", color: theme.secondaryColor, action: onShop)
-                    MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: theme.accentColor.opacity(0.7), action: { showRestartConfirm = true })
-                    MenuButton(title: "Main Menu", icon: "house.fill", color: .white.opacity(0.4), action: { showMainMenuConfirm = true })
+                    MenuButton(title: "Resume",    icon: "play.fill",             tint: theme.accentColor,    background: theme.buttonBackground, textColor: theme.primaryTextColor, action: onResume)
+                    MenuButton(title: "Shop",      icon: "bag.fill",               tint: theme.secondaryColor, background: theme.buttonBackground, textColor: theme.primaryTextColor, action: onShop)
+                    MenuButton(title: "Restart",   icon: "arrow.counterclockwise", tint: theme.accentColor,    background: theme.buttonBackground, textColor: theme.primaryTextColor, action: { showRestartConfirm = true })
+                    MenuButton(title: "Main Menu", icon: "house.fill",             tint: theme.accentColor.opacity(0.5), background: theme.buttonBackground, textColor: theme.primaryTextColor.opacity(0.6), action: { showMainMenuConfirm = true })
                     if gameState.gameMode == .endless || gameState.gameMode == .hardcore {
-                        MenuButton(title: "Quit Run", icon: "xmark.circle.fill", color: .red.opacity(0.7), action: { showQuitConfirm = true })
+                        MenuButton(title: "Quit Run", icon: "xmark.circle.fill", tint: .red, background: theme.buttonBackground, textColor: .red, action: { showQuitConfirm = true })
                     }
                 }
             }
@@ -75,16 +75,17 @@ struct PauseMenuView: View {
 struct StatRow: View {
     let label: String
     let value: String
+    let theme: SkinUITheme
 
     var body: some View {
         HStack {
             Text(label)
                 .font(.system(size: 14, design: .monospaced))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(theme.primaryTextColor.opacity(0.6))
             Spacer()
             Text(value)
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryTextColor)
         }
     }
 }
@@ -92,7 +93,9 @@ struct StatRow: View {
 struct MenuButton: View {
     let title: String
     let icon: String
-    let color: Color
+    let tint: Color
+    let background: Color
+    let textColor: Color
     let action: () -> Void
 
     var body: some View {
@@ -100,17 +103,18 @@ struct MenuButton: View {
             HStack {
                 Image(systemName: icon)
                     .frame(width: 24)
+                    .foregroundColor(tint)
                 Text(title)
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(textColor)
             }
-            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(color.opacity(0.5))
+            .background(background)
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(color.opacity(0.7), lineWidth: 1)
+                    .stroke(tint.opacity(0.6), lineWidth: 1)
             )
         }
     }
