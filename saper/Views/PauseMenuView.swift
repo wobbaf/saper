@@ -62,7 +62,7 @@ struct PauseMenuView: View {
         }
         .confirmationDialog("End this run?", isPresented: $showQuitConfirm, titleVisibility: .visible) {
             Button("Quit Run", role: .destructive) {
-                GamePersistence.clearSave()
+                GamePersistence.clearSave(for: gameState.gameMode)
                 gameState.isPlaying = false
             }
             Button("Cancel", role: .cancel) {}

@@ -44,6 +44,7 @@ struct saperApp: App {
                 sectorsSolved: gameState.sectorsSolvedThisSession,
                 tilesRevealed: gameState.tilesRevealedThisSession,
                 gemsCollected: gameState.gemsCollectedThisSession,
+                livesRemaining: gameState.livesRemaining,
                 runBoosters: gameState.runBoosters,
                 runPerks: gameState.runPerks,
                 startingDifficultyBonus: gameState.startingDifficultyBonus
