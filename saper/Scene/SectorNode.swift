@@ -6,7 +6,7 @@ class SectorNode: SKNode {
     var tileNodes: [[TileNode]] = []
     private var overlayNode: SKShapeNode?
     private var borderNode: SKShapeNode?
-    private var modifierBadgeNode: SKLabelNode?
+    private var modifierBadgeNode: SKNode?
     private var skin: SkinDefinition
 
     init(coordinate: SectorCoordinate, sector: Sector, renderer: TileRenderer, skin: SkinDefinition) {
@@ -50,15 +50,15 @@ class SectorNode: SKNode {
         let bb = CGFloat(max(0.0, 1.0 - densityNorm * 1.5))
 
         borderNode = SKShapeNode(rect: borderRect)
-        borderNode?.strokeColor = SKColor(red: br, green: bg, blue: bb, alpha: 0.35)
-        borderNode?.lineWidth = 1.5
+        borderNode?.strokeColor = SKColor(red: br, green: bg, blue: bb, alpha: 0.55)
+        borderNode?.lineWidth = 3
         borderNode?.fillColor = .clear
         borderNode?.zPosition = -1
         if let border = borderNode {
             addChild(border)
-            // Slow neon pulse on the grid line
+            // Slow pulse on the density border
             let dim = SKAction.customAction(withDuration: 2.0) { node, t in
-                let alpha = 0.20 + 0.18 * abs(sin(Double(t) * .pi / 2.0))
+                let alpha = 0.30 + 0.30 * abs(sin(Double(t) * .pi / 2.0))
                 (node as? SKShapeNode)?.strokeColor = SKColor(red: br, green: bg, blue: bb, alpha: alpha)
             }
             border.run(SKAction.repeatForever(dim))
@@ -130,15 +130,15 @@ class SectorNode: SKNode {
         case .locked:
             let overlay = SKShapeNode(rect: overlayRect)
             overlay.fillColor = skin.lockedOverlayFill
-            overlay.strokeColor = skin.lockedOverlayBorder
-            overlay.lineWidth = 2
+            overlay.strokeColor = skin.lockedOverlayBorder.withAlphaComponent(0.25)
+            overlay.lineWidth = 1
             overlay.zPosition = 10
             overlayNode = overlay
             addChild(overlay)
 
-            // Pulsing animation
-            let pulseOut = SKAction.fadeAlpha(to: 0.03, duration: 1.0)
-            let pulseIn = SKAction.fadeAlpha(to: 0.12, duration: 1.0)
+            // Gentle pulse
+            let pulseOut = SKAction.fadeAlpha(to: 0.4, duration: 1.2)
+            let pulseIn = SKAction.fadeAlpha(to: 0.9, duration: 1.2)
             overlay.run(SKAction.repeatForever(SKAction.sequence([pulseOut, pulseIn])))
 
             if animated {
@@ -148,22 +148,32 @@ class SectorNode: SKNode {
         case .inactive:
             let overlay = SKShapeNode(rect: overlayRect)
             overlay.fillColor = skin.inactiveOverlayFill
-            overlay.strokeColor = skin.inactiveOverlayBorder
-            overlay.lineWidth = 1.5
+            overlay.strokeColor = skin.inactiveOverlayBorder.withAlphaComponent(0.3)
+            overlay.lineWidth = 1
             overlay.zPosition = 10
             overlayNode = overlay
             addChild(overlay)
 
-            // Gem cost label in the center
+            // Gem cost pill
             let costText = gemCost > 0 ? "\(gemCost) 💎" : "💎"
+            let pillH: CGFloat = 34
+            let pillW: CGFloat = gemCost >= 100 ? 90 : 76
+            let pill = SKShapeNode(rectOf: CGSize(width: pillW, height: pillH), cornerRadius: pillH / 2)
+            pill.fillColor = SKColor(white: 0, alpha: 0.60)
+            pill.strokeColor = skin.inactiveCostLabelColor.withAlphaComponent(0.45)
+            pill.lineWidth = 1.5
+            pill.position = center
+            pill.zPosition = 11
+            overlay.addChild(pill)
+
             let gemLabel = SKLabelNode(text: costText)
             gemLabel.fontName = "Helvetica-Bold"
-            gemLabel.fontSize = 22
+            gemLabel.fontSize = 16
             gemLabel.fontColor = skin.inactiveCostLabelColor
-            gemLabel.position = CGPoint(x: center.x, y: center.y - 11)
-            gemLabel.zPosition = 11
-            gemLabel.alpha = 1.0
-            overlay.addChild(gemLabel)
+            gemLabel.verticalAlignmentMode = .center
+            gemLabel.horizontalAlignmentMode = .center
+            gemLabel.position = .zero
+            pill.addChild(gemLabel)
 
         case .active:
             break
@@ -181,20 +191,36 @@ class SectorNode: SKNode {
             y: CGFloat(coordinate.originTileY) * Constants.tileSize
         )
 
-        let badge = SKLabelNode(text: modifier.badge)
-        badge.fontSize = 14
-        badge.verticalAlignmentMode = .top
-        badge.horizontalAlignmentMode = .right
-        badge.position = CGPoint(x: origin.x + sectorPixelSize - 4, y: origin.y + sectorPixelSize - 4)
-        badge.zPosition = 12
-        badge.alpha = 0.9
-        addChild(badge)
-        modifierBadgeNode = badge
+        let (cr, cg, cb) = modifier.badgeColor
+        let pillH: CGFloat = 20
+        let pillW: CGFloat = 72
+        let pill = SKShapeNode(rectOf: CGSize(width: pillW, height: pillH), cornerRadius: pillH / 2)
+        pill.fillColor = SKColor(red: cr, green: cg, blue: cb, alpha: 0.22)
+        pill.strokeColor = SKColor(red: cr, green: cg, blue: cb, alpha: 0.65)
+        pill.lineWidth = 1
+        // Top-right corner, inset by half the pill
+        pill.position = CGPoint(
+            x: origin.x + sectorPixelSize - pillW / 2 - 4,
+            y: origin.y + sectorPixelSize - pillH / 2 - 4
+        )
+        pill.zPosition = 12
+
+        let label = SKLabelNode(text: "\(modifier.badge) \(modifier.displayName)")
+        label.fontName = "Helvetica-Bold"
+        label.fontSize = 10
+        label.fontColor = SKColor(red: cr, green: cg, blue: cb, alpha: 1)
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        label.position = .zero
+        pill.addChild(label)
+
+        addChild(pill)
+        modifierBadgeNode = pill
 
         // Subtle pulse
-        let fadeDown = SKAction.fadeAlpha(to: 0.55, duration: 1.2)
-        let fadeUp = SKAction.fadeAlpha(to: 0.9, duration: 1.2)
-        badge.run(SKAction.repeatForever(SKAction.sequence([fadeDown, fadeUp])))
+        let fadeDown = SKAction.fadeAlpha(to: 0.5, duration: 1.4)
+        let fadeUp = SKAction.fadeAlpha(to: 1.0, duration: 1.4)
+        pill.run(SKAction.repeatForever(SKAction.sequence([fadeDown, fadeUp])))
     }
 
     // MARK: - Sector Solved Animation
