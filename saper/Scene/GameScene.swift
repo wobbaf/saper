@@ -314,6 +314,17 @@ class GameScene: SKScene {
             )
         }
 
+        gameState.onShieldAbsorbed = { [weak self] gx, gy in
+            guard let self = self else { return }
+            let worldX = CGFloat(gx) * Constants.tileSize + Constants.tileSize / 2
+            let worldY = CGFloat(gy) * Constants.tileSize + Constants.tileSize / 2 + 12
+            self.hudNode.showFloatingText(
+                "🛡️ BLOCKED",
+                at: CGPoint(x: worldX, y: worldY),
+                color: SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1.0)
+            )
+        }
+
         gameState.onAchievementUnlocked = { [weak self] achievement in
             guard let self = self else { return }
             let camPos = self.cameraNode.position

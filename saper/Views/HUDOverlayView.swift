@@ -121,6 +121,12 @@ struct HUDOverlayView: View {
                 boosterButton(icon: "arrow.uturn.backward", count: gameState.undoMineAvailable,    color: .orange, action: useUndoMine)
                     .scaleEffect(undoMineBounce ? 1.3 : 1.0)
                     .animation(.spring(response: 0.2, dampingFraction: 0.4), value: undoMineBounce)
+
+                let shields = gameState.perkStacks(.mineShield)
+                if shields > 0 {
+                    pillDivider
+                    shieldIndicator(count: shields)
+                }
             }
             .onChange(of: gameState.revealOneAvailable) { newVal in
                 if newVal > prevRevealOne {
@@ -292,6 +298,19 @@ struct HUDOverlayView: View {
                 .foregroundColor(.white.opacity(0.4))
         }
         .allowsHitTesting(false)
+    }
+
+    // MARK: - Shield indicator
+
+    private func shieldIndicator(count: Int) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "shield.fill")
+                .font(.system(size: 13))
+            Text("\(count)")
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+        }
+        .foregroundColor(.blue)
+        .frame(minWidth: 44, minHeight: 36)
     }
 
     // MARK: - Actions
