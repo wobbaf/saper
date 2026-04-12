@@ -160,7 +160,7 @@ class GameScene: SKScene {
             hudNode.showFloatingText(
                 "Need \(needed) more 💎",
                 at: center,
-                color: SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 1.0)
+                color: gameState.profile.currentSkin.definition.floatingWarningColor
             )
             AudioManager.shared.play(.lockedSectorTap)
             HapticsManager.shared.play(.lockedSectorTap)
@@ -238,7 +238,8 @@ class GameScene: SKScene {
                     let sectorNode = SectorNode(
                         coordinate: coord,
                         sector: sector,
-                        renderer: tileRenderer
+                        renderer: tileRenderer,
+                        skin: gameState.profile.currentSkin.definition
                     )
                     addChild(sectorNode)
                     sectorNodes[coord] = sectorNode
@@ -285,7 +286,7 @@ class GameScene: SKScene {
             self.hudNode.showFloatingText(
                 "+\(amount) gems",
                 at: CGPoint(x: centerX, y: centerY),
-                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
+                color: self.gameState.profile.currentSkin.definition.floatingGemColor
             )
         }
 
@@ -298,7 +299,7 @@ class GameScene: SKScene {
             self.hudNode.showFloatingText(
                 "+\(amount) 💎",
                 at: worldPos,
-                color: SKColor(red: 0.3, green: 0.9, blue: 1.0, alpha: 1.0)
+                color: self.gameState.profile.currentSkin.definition.floatingGemColor
             )
         }
 
@@ -309,7 +310,7 @@ class GameScene: SKScene {
             self.hudNode.showFloatingText(
                 "+\(amount) 💰",
                 at: CGPoint(x: worldX, y: worldY),
-                color: SKColor(red: 1.0, green: 0.85, blue: 0.2, alpha: 1.0)
+                color: self.gameState.profile.currentSkin.definition.floatingGoldColor
             )
         }
 
@@ -319,7 +320,7 @@ class GameScene: SKScene {
             self.hudNode.showFloatingText(
                 "🏆 \(achievement.displayName)",
                 at: CGPoint(x: camPos.x, y: camPos.y + 60),
-                color: SKColor(red: 1.0, green: 0.85, blue: 0.2, alpha: 1.0)
+                color: self.gameState.profile.currentSkin.definition.floatingGoldColor
             )
         }
 
@@ -336,38 +337,27 @@ class GameScene: SKScene {
             self.hudNode.showFloatingText(
                 "-\(cost) 💎",
                 at: center,
-                color: SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1.0)
+                color: self.gameState.profile.currentSkin.definition.floatingGemColor
             )
         }
     }
 
     // MARK: - Difficulty Background
 
-    /// Background colours for each difficulty tier — deep blue → purple → crimson.
+    /// Background colour for a difficulty tier — lerps from skin base colour to skin max colour.
     private func backgroundColorForTier(_ tier: Int, skin: SkinType) -> SKColor {
-        switch skin {
-        case .classicLight:
-            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
-            return SKColor(red: 0.78 - t * 0.10, green: 0.78 - t * 0.15, blue: 0.78 - t * 0.20, alpha: 1)
-        case .classicDark:
-            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
-            return SKColor(red: 0.10 + t * 0.12, green: max(0.02, 0.10 - t * 0.06), blue: max(0.02, 0.10 - t * 0.06), alpha: 1)
-        case .space:
-            // r rises (blue → red), b falls
-            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
-            let r = 0.02 + t * 0.20
-            let g = 0.02 - t * 0.01
-            let b = 0.08 - t * 0.06
-            return SKColor(red: r, green: max(g, 0.01), blue: max(b, 0.02), alpha: 1)
-        case .neonGrid:
-            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
-            let r = t * 0.12
-            return SKColor(red: r, green: 0.0, blue: max(0.00, 0.02 - t * 0.02), alpha: 1)
-        case .minecraft:
-            // Dirt → darker burnt earth as difficulty rises
-            let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
-            return SKColor(red: 0.35 + t * 0.05, green: max(0.05, 0.22 - t * 0.10), blue: 0.08 - t * 0.05, alpha: 1)
-        }
+        let def = skin.definition
+        let t = min(CGFloat(tier) / CGFloat(Constants.maxDifficultyTier), 1.0)
+        var sr: CGFloat = 0, sg: CGFloat = 0, sb: CGFloat = 0, sa: CGFloat = 0
+        var er: CGFloat = 0, eg: CGFloat = 0, eb: CGFloat = 0, ea: CGFloat = 0
+        def.backgroundColor.getRed(&sr, green: &sg, blue: &sb, alpha: &sa)
+        def.difficultyMaxColor.getRed(&er, green: &eg, blue: &eb, alpha: &ea)
+        return SKColor(
+            red:   sr + (er - sr) * t,
+            green: sg + (eg - sg) * t,
+            blue:  sb + (eb - sb) * t,
+            alpha: 1
+        )
     }
 
     private func animateBackgroundToTier(_ tier: Int) {
@@ -465,7 +455,7 @@ class GameScene: SKScene {
         hudNode.showFloatingText(
             "+\(Constants.xpPerSectorSolve) XP",
             at: CGPoint(x: centerX, y: centerY + 25),
-            color: SKColor(red: 0.5, green: 1.0, blue: 0.5, alpha: 1)
+            color: gameState.profile.currentSkin.definition.floatingXPColor
         )
     }
 

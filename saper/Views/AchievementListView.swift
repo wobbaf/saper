@@ -27,6 +27,7 @@ struct AchievementListView: View {
             }
             .navigationTitle("Achievements")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }

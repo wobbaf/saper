@@ -162,17 +162,18 @@ class TileRenderer {
             return createCreeperTile(size: size)
         }
 
+        let def = skin.definition
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 2)
-        bg.fillColor = SKColor(red: 0.3, green: 0.0, blue: 0.0, alpha: 1)
-        bg.strokeColor = SKColor(red: 0.8, green: 0.0, blue: 0.0, alpha: 1)
+        bg.fillColor = def.mineBackgroundColor
+        bg.strokeColor = def.mineBorderColor
         bg.lineWidth = 1
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(bg)
 
         // Mine symbol
         let mine = SKShapeNode(circleOfRadius: 8)
-        mine.fillColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1)
-        mine.strokeColor = SKColor(red: 1.0, green: 0.4, blue: 0.4, alpha: 1)
+        mine.fillColor = def.mineCircleColor
+        mine.strokeColor = def.mineCircleBorderColor
         mine.lineWidth = 1.5
         mine.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(mine)
@@ -180,7 +181,7 @@ class TileRenderer {
         // Spikes
         for angle in stride(from: 0.0, to: .pi * 2, by: .pi / 4) {
             let spike = SKShapeNode(rectOf: CGSize(width: 2, height: 10))
-            spike.fillColor = SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 1)
+            spike.fillColor = def.mineSpikeColor
             spike.strokeColor = .clear
             spike.position = CGPoint(
                 x: size.width / 2 + cos(CGFloat(angle)) * 10,
@@ -251,16 +252,17 @@ class TileRenderer {
 
         let container = SKNode()
 
+        let def = skin.definition
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 4)
         bg.fillColor = skin.hiddenTileColor
-        bg.strokeColor = SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 0.8)
+        bg.strokeColor = def.flagBorderColor
         bg.lineWidth = 1.5
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(bg)
 
         // Flag pole
         let pole = SKShapeNode(rectOf: CGSize(width: 2, height: 18))
-        pole.fillColor = .white
+        pole.fillColor = def.flagPoleColor
         pole.strokeColor = .clear
         pole.position = CGPoint(x: size.width / 2, y: size.height / 2 - 2)
         container.addChild(pole)
@@ -272,7 +274,7 @@ class TileRenderer {
         path.addLine(to: CGPoint(x: 0, y: -10))
         path.closeSubpath()
         let flag = SKShapeNode(path: path)
-        flag.fillColor = SKColor(red: 1.0, green: 0.3, blue: 0.1, alpha: 1)
+        flag.fillColor = def.flagTriangleColor
         flag.strokeColor = .clear
         flag.position = CGPoint(x: size.width / 2 + 1, y: size.height / 2 + 10)
         container.addChild(flag)
@@ -286,7 +288,7 @@ class TileRenderer {
 
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 0)
         bg.fillColor = skin.obsidianColor
-        bg.strokeColor = SKColor(red: 0.25, green: 0.10, blue: 0.35, alpha: 1)
+        bg.strokeColor = skin.definition.specialTileBorderColor
         bg.lineWidth = 1
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(bg)
@@ -313,9 +315,10 @@ class TileRenderer {
     private func createQuestionTile(size: CGSize) -> SKNode {
         let container = SKNode()
 
+        let def = skin.definition
         let bg = SKShapeNode(rectOf: CGSize(width: size.width - 2, height: size.height - 2), cornerRadius: 4)
         bg.fillColor = skin.hiddenTileColor
-        bg.strokeColor = SKColor(red: 0.5, green: 0.5, blue: 1.0, alpha: 0.8)
+        bg.strokeColor = def.questionBorderColor
         bg.lineWidth = 1.5
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         container.addChild(bg)
@@ -323,7 +326,7 @@ class TileRenderer {
         let label = SKLabelNode(text: "?")
         label.fontName = "Menlo-Bold"
         label.fontSize = 24
-        label.fontColor = SKColor(red: 0.5, green: 0.5, blue: 1.0, alpha: 1)
+        label.fontColor = def.questionMarkColor
         label.verticalAlignmentMode = .center
         label.horizontalAlignmentMode = .center
         label.position = CGPoint(x: size.width / 2, y: size.height / 2)

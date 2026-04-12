@@ -48,6 +48,7 @@ struct PrestigeShopView: View {
                 }
             }
             .navigationTitle("Upgrades")
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

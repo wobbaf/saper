@@ -76,6 +76,7 @@ struct LeaderboardView: View {
                 }
             }
             .navigationTitle("Scores")
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

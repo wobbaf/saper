@@ -53,6 +53,7 @@ struct ShopView: View {
             }
             .navigationTitle("Shop")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
@@ -87,11 +88,11 @@ private struct ShopRow: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(item.color.opacity(0.15))
+                    .fill(item.color.opacity(0.85))
                     .frame(width: 48, height: 48)
                 Image(systemName: item.booster.iconName)
                     .font(.system(size: 20))
-                    .foregroundColor(item.color)
+                    .foregroundColor(.white)
             }
 
             VStack(alignment: .leading, spacing: 3) {

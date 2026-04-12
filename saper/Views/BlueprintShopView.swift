@@ -50,9 +50,11 @@ struct BlueprintShopView: View {
             }
             .navigationTitle("Blueprints")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarColorScheme(theme.isDark ? .dark : .light)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .foregroundColor(theme.accentColor)
                 }
             }
         }
