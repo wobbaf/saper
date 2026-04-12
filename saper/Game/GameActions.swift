@@ -209,37 +209,6 @@ struct GameActions {
         return false
     }
 
-    /// Use the Reveal One booster: reveal one random safe hidden tile in the sector.
-    static func useRevealOneBooster(
-        sectorCoord: SectorCoordinate,
-        gameState: GameState
-    ) -> FloodFill.TilePosition? {
-        guard gameState.revealOneAvailable > 0 else { return nil }
-        guard let sector = gameState.boardManager.sector(at: sectorCoord),
-              sector.status == .active else { return nil }
-
-        var candidates: [(Int, Int)] = []
-        for row in 0..<Constants.sectorSize {
-            for col in 0..<Constants.sectorSize {
-                let tile = sector.tiles[row][col]
-                if !tile.hasMine && tile.state == .hidden {
-                    candidates.append((col, row))
-                }
-            }
-        }
-
-        guard !candidates.isEmpty else { return nil }
-
-        let (col, row) = candidates.randomElement()!
-        let gx = sectorCoord.originTileX + col
-        let gy = sectorCoord.originTileY + row
-
-        _ = revealTile(globalX: gx, globalY: gy, gameState: gameState)
-        gameState.runBoosters[BoosterType.revealOne.rawValue, default: 0] -= 1
-
-        return FloodFill.TilePosition(globalX: gx, globalY: gy)
-    }
-
     /// Use the Solve Sector booster: reveal all safe tiles in the sector.
     static func useSolveSectorBooster(
         sectorCoord: SectorCoordinate,

@@ -7,9 +7,10 @@ private struct ShopItem {
 }
 
 private let shopItems: [ShopItem] = [
-    ShopItem(booster: .revealOne,    price: 30,  color: .yellow),
-    ShopItem(booster: .solveSector,  price: 60, color: .purple),
+    ShopItem(booster: .solveSector,  price: 60,  color: .purple),
     ShopItem(booster: .undoMine,     price: 25,  color: .orange),
+    ShopItem(booster: .mineShield,   price: 40,  color: .blue),
+    ShopItem(booster: .refillHeart,  price: 50,  color: .pink),
 ]
 
 /// Gem shop — buy boosters with gems. Purchases are permanent (added to base stock).
@@ -75,9 +76,10 @@ private struct ShopRow: View {
             return gameState.runBoosters[item.booster.rawValue] ?? 0
         }
         switch item.booster {
-        case .revealOne:   return gameState.profile.revealOneCount
-        case .solveSector: return gameState.profile.solveSectorCount
-        case .undoMine:    return gameState.profile.undoMineCount
+        case .solveSector:  return gameState.profile.solveSectorCount
+        case .undoMine:     return gameState.profile.undoMineCount
+        case .mineShield:   return gameState.profile.mineShieldCount
+        case .refillHeart:  return gameState.profile.refillHeartCount
         }
     }
 
@@ -143,9 +145,10 @@ private struct ShopRow: View {
         guard canAfford && !atMax else { return }
         gameState.profile.gems -= item.price
         switch item.booster {
-        case .revealOne:   gameState.profile.revealOneCount += 1
-        case .solveSector: gameState.profile.solveSectorCount += 1
-        case .undoMine:    gameState.profile.undoMineCount += 1
+        case .solveSector:  gameState.profile.solveSectorCount += 1
+        case .undoMine:     gameState.profile.undoMineCount += 1
+        case .mineShield:   gameState.profile.mineShieldCount += 1
+        case .refillHeart:  gameState.profile.refillHeartCount += 1
         }
         // If buying mid-run, also add to the live run stock so the HUD updates immediately
         if gameState.isPlaying {
