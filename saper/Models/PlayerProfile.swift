@@ -20,6 +20,7 @@ struct PlayerProfile: Codable {
     var sfxVolume: Float = 0.7
     var ambienceVolume: Float = 0.3
     var autoFlagEnabled: Bool = false
+    var flagOnlyMode: Bool = false  // tap = flag, long-press = reveal
     var appearanceMode: Int = 0 // 0 = system, 1 = light, 2 = dark
 
     // Achievement tracking

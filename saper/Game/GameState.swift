@@ -223,6 +223,10 @@ class GameState: ObservableObject {
                 }
             }
 
+            if profile.autoFlagEnabled {
+                applyAutoFlags(around: revealed)
+            }
+
         case .mine(let coord, let gx, let gy):
             solveStreak = 0
             AudioManager.shared.play(.mineExplosion)
@@ -275,6 +279,61 @@ class GameState: ObservableObject {
         objectWillChange.send()
     }
 
+    /// For each newly revealed numbered tile, if remaining hidden neighbors == remaining mine count, flag them all.
+    func applyAutoFlags(around revealed: [FloodFill.TilePosition]) {
+        var flagged: [(Int, Int)] = []
+
+        for pos in revealed {
+            let sc = SectorCoordinate(fromTileX: pos.globalX, tileY: pos.globalY)
+            guard let sector = boardManager.sector(at: sc) else { continue }
+            let lx = pos.globalX - sc.originTileX
+            let ly = pos.globalY - sc.originTileY
+            guard lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize else { continue }
+            let tile = sector.tiles[ly][lx]
+            guard tile.state == .revealed, tile.adjacentMineCount > 0 else { continue }
+
+            var hiddenNeighbors: [(Int, Int)] = []
+            var existingFlags = 0
+
+            for dx in -1...1 {
+                for dy in -1...1 {
+                    if dx == 0 && dy == 0 { continue }
+                    let nx = pos.globalX + dx
+                    let ny = pos.globalY + dy
+                    let nsc = SectorCoordinate(fromTileX: nx, tileY: ny)
+                    guard let nSector = boardManager.sector(at: nsc) else { continue }
+                    let nlx = nx - nsc.originTileX
+                    let nly = ny - nsc.originTileY
+                    guard nlx >= 0, nlx < Constants.sectorSize, nly >= 0, nly < Constants.sectorSize else { continue }
+                    let nTile = nSector.tiles[nly][nlx]
+                    if nTile.state == .flagged {
+                        existingFlags += 1
+                    } else if nTile.state == .hidden {
+                        hiddenNeighbors.append((nx, ny))
+                    }
+                }
+            }
+
+            // Auto-flag only when all remaining hidden neighbors must be mines
+            if hiddenNeighbors.count == tile.adjacentMineCount - existingFlags && !hiddenNeighbors.isEmpty {
+                for (nx, ny) in hiddenNeighbors {
+                    if let newState = GameActions.toggleFlag(globalX: nx, globalY: ny, gameState: self),
+                       newState == .flagged {
+                        flagged.append((nx, ny))
+                    }
+                }
+            }
+        }
+
+        for (nx, ny) in flagged {
+            onTileStateChanged?(nx, ny, .flagged)
+        }
+        if !flagged.isEmpty {
+            AudioManager.shared.play(.flagPlace)
+            HapticsManager.shared.play(.flagPlaced)
+        }
+    }
+
     func toggleFlag(globalX: Int, globalY: Int) {
         if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         if let newState = GameActions.toggleFlag(globalX: globalX, globalY: globalY, gameState: self) {
@@ -325,6 +384,10 @@ class GameState: ObservableObject {
                     if GameActions.checkSectorCompletion(sc, gameState: self) {
                         handleSectorSolved(sc)
                     }
+                }
+
+                if profile.autoFlagEnabled {
+                    applyAutoFlags(around: revealed)
                 }
             }
 
