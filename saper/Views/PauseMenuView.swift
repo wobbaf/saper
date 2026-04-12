@@ -106,11 +106,11 @@ struct MenuButton: View {
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(color.opacity(0.3))
+            .background(color.opacity(0.5))
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(color.opacity(0.5), lineWidth: 1)
+                    .stroke(color.opacity(0.7), lineWidth: 1)
             )
         }
     }
