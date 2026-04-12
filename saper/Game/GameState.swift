@@ -45,6 +45,8 @@ class GameState: ObservableObject {
     var onTileGemCollected: ((Int, Int, Int) -> Void)?  // globalX, globalY, amount
     var onPiggyBankFound: ((Int, Int, Int) -> Void)?    // globalX, globalY, gems
     var onAchievementUnlocked: ((Achievement) -> Void)?
+    /// Fired when a Mine Shield (or Last Stand) absorbs a hit — gx, gy of the mine tile.
+    var onShieldAbsorbed: ((Int, Int) -> Void)?
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -224,48 +226,10 @@ class GameState: ObservableObject {
             HapticsManager.shared.play(.mineHit)
             MusicEngine.shared.triggerMineHit()
 
-            let absorbed: Bool
-            if gameMode == .practice {
-                // Practice mode: mine hits are always absorbed, no consequences
-                absorbed = true
-            } else if gameMode == .hardcore {
-                let shields = perkStacks(.mineShield)
-                if shields > 0 {
-                    runPerks[RunPerk.mineShield.rawValue] = shields - 1
-                    absorbed = true
-                } else if profile.lastStandUnlocked && !profile.lastStandUsedThisRun {
-                    profile.lastStandUsedThisRun = true
-                    absorbed = true
-                } else {
-                    isGameOver = true
-                    absorbed = false
-                }
-            } else if gameMode == .endless {
-                if profile.lastStandUnlocked && !profile.lastStandUsedThisRun && livesRemaining <= 1 {
-                    profile.lastStandUsedThisRun = true
-                    absorbed = true
-                } else {
-                    livesRemaining -= 1
-                    if livesRemaining <= 0 {
-                        livesRemaining = 0
-                        isGameOver = true
-                    }
-                    absorbed = livesRemaining > 0
-                }
-            } else {
-                absorbed = false
-            }
-
-            if !absorbed {
-                if let sector = boardManager.sector(at: coord) {
-                    sector.status = .locked
-                    sector.isModified = true
-                }
-                onMineHit?(coord)
-                onSectorStatusChanged?(coord, .locked)
-            } else {
-                // Show the hit mine briefly, then reset the tile so the player can continue
+            if checkAndConsumeAbsorber() {
+                // Shield/Last Stand absorbed: show mine briefly then reset, no lock, no life lost
                 onTileStateChanged?(gx, gy, .mine)
+                onShieldAbsorbed?(gx, gy)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
                     guard let self = self else { return }
                     let sc = SectorCoordinate(fromTileX: gx, tileY: gy)
@@ -278,6 +242,23 @@ class GameState: ObservableObject {
                         }
                     }
                     self.onTileStateChanged?(gx, gy, .hidden)
+                }
+            } else {
+                // Sector fails: lock it, reveal all mines, deduct life
+                if let sector = boardManager.sector(at: coord) {
+                    sector.status = .locked
+                    sector.isModified = true
+                }
+                onMineHit?(coord)
+                onSectorStatusChanged?(coord, .locked)
+                if gameMode == .hardcore {
+                    isGameOver = true
+                } else if gameMode == .endless {
+                    livesRemaining -= 1
+                    if livesRemaining <= 0 {
+                        livesRemaining = 0
+                        isGameOver = true
+                    }
                 }
             }
 
@@ -344,27 +325,38 @@ class GameState: ObservableObject {
                 }
             }
 
-        case .mine(let coord, _, _):
+        case .mine(let coord, let gx, let gy):
             solveStreak = 0
             AudioManager.shared.play(.mineExplosion)
             HapticsManager.shared.play(.mineHit)
-            if let sector = boardManager.sector(at: coord) {
-                sector.status = .locked
-                sector.isModified = true
-            }
-            onMineHit?(coord)
-            onSectorStatusChanged?(coord, .locked)
-            if gameMode == .hardcore {
-                let shields = perkStacks(.mineShield)
-                if shields > 0 {
-                    runPerks[RunPerk.mineShield.rawValue] = shields - 1
-                } else {
-                    isGameOver = true
+            MusicEngine.shared.triggerMineHit()
+
+            if checkAndConsumeAbsorber() {
+                onTileStateChanged?(gx, gy, .mine)
+                onShieldAbsorbed?(gx, gy)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                    guard let self = self else { return }
+                    let sc = SectorCoordinate(fromTileX: gx, tileY: gy)
+                    if let sector = self.boardManager.sector(at: sc) {
+                        let lx = gx - sc.originTileX
+                        let ly = gy - sc.originTileY
+                        if lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize {
+                            sector.tiles[ly][lx].state = .hidden
+                            sector.isModified = true
+                        }
+                    }
+                    self.onTileStateChanged?(gx, gy, .hidden)
                 }
-            } else if gameMode == .endless {
-                if profile.lastStandUnlocked && !profile.lastStandUsedThisRun && livesRemaining <= 1 {
-                    profile.lastStandUsedThisRun = true
-                } else {
+            } else {
+                if let sector = boardManager.sector(at: coord) {
+                    sector.status = .locked
+                    sector.isModified = true
+                }
+                onMineHit?(coord)
+                onSectorStatusChanged?(coord, .locked)
+                if gameMode == .hardcore {
+                    isGameOver = true
+                } else if gameMode == .endless {
                     livesRemaining -= 1
                     if livesRemaining <= 0 {
                         livesRemaining = 0
@@ -435,8 +427,32 @@ class GameState: ObservableObject {
             HapticsManager.shared.play(.boosterRevealOne)
             onSectorReset?(sectorCoord)
             onSectorStatusChanged?(sectorCoord, .active)
+            // Refund the life lost when this sector was failed
+            if gameMode == .endless && livesRemaining < maxLives {
+                livesRemaining = min(livesRemaining + 1, maxLives)
+            }
             objectWillChange.send()
         }
+    }
+
+    // MARK: - Mine absorption helper
+
+    /// Checks and consumes a mine-absorbing effect (Mine Shield or Last Stand).
+    /// Returns true if the hit is absorbed — no sector lock, no life deducted.
+    private func checkAndConsumeAbsorber() -> Bool {
+        if gameMode == .practice { return true }
+        let shields = perkStacks(.mineShield)
+        if shields > 0 {
+            runPerks[RunPerk.mineShield.rawValue] = shields - 1
+            return true
+        }
+        let onLastLifeInEndless = gameMode == .endless && livesRemaining <= 1
+        if profile.lastStandUnlocked && !profile.lastStandUsedThisRun &&
+           (gameMode == .hardcore || onLastLifeInEndless) {
+            profile.lastStandUsedThisRun = true
+            return true
+        }
+        return false
     }
 
     // MARK: - Achievements

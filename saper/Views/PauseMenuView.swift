@@ -12,6 +12,7 @@ struct PauseMenuView: View {
 
     @State private var showRestartConfirm = false
     @State private var showMainMenuConfirm = false
+    @State private var showQuitConfirm = false
 
     var body: some View {
         ZStack {
@@ -38,6 +39,9 @@ struct PauseMenuView: View {
                     MenuButton(title: "Shop", icon: "bag.fill", color: theme.secondaryColor, action: onShop)
                     MenuButton(title: "Restart", icon: "arrow.counterclockwise", color: theme.accentColor.opacity(0.7), action: { showRestartConfirm = true })
                     MenuButton(title: "Main Menu", icon: "house.fill", color: .white.opacity(0.4), action: { showMainMenuConfirm = true })
+                    if gameState.gameMode == .endless || gameState.gameMode == .hardcore {
+                        MenuButton(title: "Quit Run", icon: "xmark.circle.fill", color: .red.opacity(0.7), action: { showQuitConfirm = true })
+                    }
                 }
             }
             .padding(30)
@@ -55,6 +59,15 @@ struct PauseMenuView: View {
             Text(gameState.gameMode == .endless || gameState.gameMode == .hardcore
                  ? "Your run will be saved. You can resume it later."
                  : "Your current session will end.")
+        }
+        .confirmationDialog("End this run?", isPresented: $showQuitConfirm, titleVisibility: .visible) {
+            Button("Quit Run", role: .destructive) {
+                GamePersistence.clearSave()
+                gameState.isPlaying = false
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This run will be deleted and cannot be resumed.")
         }
     }
 }

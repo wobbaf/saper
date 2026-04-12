@@ -10,7 +10,6 @@ struct MainMenuView: View {
     @State private var animateTitle = false
     @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
-    @State private var showResumeAlert = false
     @State private var showDifficultyPicker = false
 
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
@@ -123,15 +122,6 @@ struct MainMenuView: View {
                 }
             }
         }
-        .alert("Resume Game?", isPresented: $showResumeAlert, presenting: pendingMode) { mode in
-            Button("Resume") {
-                if !gameState.resumeFromSave() { gameState.startGame(mode: mode) }
-            }
-            Button("New Game", role: .destructive) { showDifficultyPicker = true }
-            Button("Cancel", role: .cancel) { pendingMode = nil }
-        } message: { mode in
-            Text("You have a saved \(mode.displayName) game in progress.")
-        }
     }
 
     private func startGame(mode: GameMode) {
@@ -140,8 +130,8 @@ struct MainMenuView: View {
             return
         }
         pendingMode = mode
-        if GamePersistence.savedGameMode() == mode {
-            showResumeAlert = true
+        if GamePersistence.savedGameMode() == mode && gameState.resumeFromSave() {
+            // Auto-resume — nothing more to do
         } else {
             showDifficultyPicker = true
         }
