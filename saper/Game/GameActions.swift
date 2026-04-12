@@ -28,7 +28,7 @@ struct GameActions {
               localY >= 0, localY < Constants.sectorSize else { return .alreadyRevealed }
 
         let tile = sector.tiles[localY][localX]
-        if tile.state == .revealed || tile.state == .flagged || tile.state == .question {
+        if tile.state == .revealed || tile.state == .flagged {
             return .alreadyRevealed
         }
 
@@ -95,11 +95,9 @@ struct GameActions {
 
         let newState: TileState
         switch currentState {
-        case .hidden:
+        case .hidden, .question:
             newState = .flagged
         case .flagged:
-            newState = .question
-        case .question:
             newState = .hidden
         default:
             return nil

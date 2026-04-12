@@ -28,9 +28,6 @@ class TileRenderer {
             createFlagTile(size: size)
         }
 
-        textures["question"] = renderTexture(in: view) { [self] size in
-            createQuestionTile(size: size)
-        }
     }
 
     func texture(for state: TileState, adjacentCount: Int = 0) -> SKTexture? {
@@ -44,7 +41,7 @@ class TileRenderer {
         case .flagged:
             return textures["flag"]
         case .question:
-            return textures["question"]
+            return textures["hidden"]  // legacy state — render as hidden
         }
     }
 
