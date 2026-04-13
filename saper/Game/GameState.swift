@@ -529,6 +529,38 @@ class GameState: ObservableObject {
         }
     }
 
+    /// Undo the mine hit that just triggered game over. Resets the nearest locked sector,
+    /// clears isGameOver, and restores 1 life in Endless. Returns true on success.
+    @discardableResult
+    func undoMineAfterGameOver() -> Bool {
+        guard isGameOver, undoMineAvailable > 0 else { return false }
+        let center = focusedSector
+        for radius in 0...10 {
+            for dx in -radius...radius {
+                for dy in -radius...radius {
+                    if abs(dx) != radius && abs(dy) != radius { continue }
+                    let coord = SectorCoordinate(x: center.x + dx, y: center.y + dy)
+                    guard let sector = boardManager.sector(at: coord),
+                          sector.status == .locked else { continue }
+                    if GameActions.useUndoMineBooster(sectorCoord: coord, gameState: self) {
+                        AudioManager.shared.play(.boosterUsed)
+                        HapticsManager.shared.play(.boosterRevealOne)
+                        onSectorReset?(coord)
+                        onSectorStatusChanged?(coord, .active)
+                        isGameOver = false
+                        if gameMode == .endless {
+                            livesRemaining = min(livesRemaining + 1, maxLives)
+                        }
+                        objectWillChange.send()
+                        return true
+                    }
+                    return false
+                }
+            }
+        }
+        return false
+    }
+
     // MARK: - Mine absorption helper
 
     /// Checks and consumes a mine-absorbing effect (Mine Shield booster or practice mode).
