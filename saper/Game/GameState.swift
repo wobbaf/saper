@@ -28,6 +28,7 @@ class GameState: ObservableObject {
     @Published var runBoosters: [String: Int] = [:]  // BoosterType.rawValue → count
     @Published var runPerks: [String: Int] = [:]     // RunPerk.rawValue → stacks
     @Published var livesRemaining: Int = 3           // Endless mode only
+    @Published var islandImmunityActive: Bool = false // mine-safe until first island
 
     let boardManager: BoardManager
     let timerManager = TimerManager()
@@ -123,6 +124,11 @@ class GameState: ObservableObject {
 
         let sectorCoord = SectorCoordinate(fromTileX: globalX, tileY: globalY)
 
+        // Island immunity: treat every tap as a "first tap" so mine relocation always fires.
+        if islandImmunityActive, let sector = boardManager.sector(at: sectorCoord) {
+            sector.firstTapDone = false
+        }
+
         // Capture whether this is the sector's first tap before GameActions sets firstTapDone.
         // If it is, ensureSafeFirstTap may relocate a mine, making neighbour border counts stale.
         let wasFirstTap = boardManager.sector(at: sectorCoord)?.firstTapDone == false
@@ -140,6 +146,11 @@ class GameState: ObservableObject {
 
         switch result {
         case .safe(let revealed):
+            // Island found — end immunity so normal mine rules apply from here on
+            if islandImmunityActive && revealed.count > 1 {
+                islandImmunityActive = false
+            }
+
             tilesRevealedThisSession += revealed.count
             if gameMode != .practice {
                 let xpGained = Int(Double(revealed.count * Constants.xpPerTileReveal) * xpMultiplier)
@@ -643,6 +654,7 @@ class GameState: ObservableObject {
         profile.level = 1
         difficultyTier = 0
         self.startingDifficultyBonus = startingDifficultyBonus
+        islandImmunityActive = profile.islandImmunityEnabled && mode != .practice
         boardManager.difficultyBonus = startingDifficultyBonus
 
         // Per-run boosters: base stock + headstart prestige bonus
@@ -718,6 +730,7 @@ class GameState: ObservableObject {
         ]
         runPerks = saveData.runPerks ?? [:]
         pendingPerkOffer = []
+        islandImmunityActive = false  // immunity is never granted on resume
         isPlaying = true
 
         // Restore difficulty tier from saved sector count

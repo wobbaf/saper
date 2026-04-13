@@ -67,6 +67,7 @@ struct SettingsView: View {
                 }
 
                 Section("Gameplay") {
+                    Toggle("Island Immunity", isOn: $gameState.profile.islandImmunityEnabled)
                     Toggle("Auto-Flag on Sector Solve", isOn: $gameState.profile.autoFlagEnabled)
                     Toggle("Flag-Only Mode", isOn: $gameState.profile.flagOnlyMode)
                     if gameState.profile.flagOnlyMode {

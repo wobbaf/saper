@@ -21,6 +21,7 @@ struct PlayerProfile: Codable {
     var ambienceVolume: Float = 0.3
     var autoFlagEnabled: Bool = false
     var flagOnlyMode: Bool = false  // tap = flag, long-press = reveal
+    var islandImmunityEnabled: Bool = true  // mine-safe until first island uncovered
     var appearanceMode: Int = 0 // 0 = system, 1 = light, 2 = dark
 
     // Achievement tracking
