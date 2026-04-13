@@ -115,7 +115,7 @@ enum SkinType: String, Codable, CaseIterable {
                 hiddenTileHighlightColor:SKColor(white: 1.0, alpha: 0.03),
                 revealedTileColor:       SKColor(red: 0.75, green: 0.75, blue: 0.75, alpha: 1),
                 gridLineColor:           SKColor(red: 0.50, green: 0.50, blue: 0.50, alpha: 0.9),
-                tileCornerRadius:        5,
+                tileCornerRadius:        4,
                 useNeonGlow:             false,
                 numberColors: [
                     SKColor(red: 0.5,  green: 0.5,  blue: 0.5,  alpha: 1), // 0
@@ -200,7 +200,7 @@ enum SkinType: String, Codable, CaseIterable {
                 hiddenTileHighlightColor:SKColor(white: 1.0, alpha: 0.03),
                 revealedTileColor:       SKColor(red: 0.16, green: 0.16, blue: 0.16, alpha: 1),
                 gridLineColor:           SKColor(red: 0.32, green: 0.32, blue: 0.32, alpha: 0.9),
-                tileCornerRadius:        5,
+                tileCornerRadius:        4,
                 useNeonGlow:             false,
                 numberColors: [
                     SKColor(red: 0.45, green: 0.45, blue: 0.45, alpha: 1), // 0
