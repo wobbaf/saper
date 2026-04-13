@@ -49,7 +49,7 @@ class SectorNode: SKNode {
         let bg = CGFloat(max(0.1, 0.8 - densityNorm * 0.8))
         let bb = CGFloat(max(0.0, 1.0 - densityNorm * 1.5))
 
-        borderNode = SKShapeNode(rect: borderRect)
+        borderNode = SKShapeNode(rect: borderRect, cornerRadius: 10)
         borderNode?.strokeColor = SKColor(red: br, green: bg, blue: bb, alpha: 0.55)
         borderNode?.lineWidth = 3
         borderNode?.fillColor = .clear
@@ -115,7 +115,7 @@ class SectorNode: SKNode {
 
         switch status {
         case .solved:
-            let overlay = SKShapeNode(rect: overlayRect)
+            let overlay = SKShapeNode(rect: overlayRect, cornerRadius: 10)
             overlay.fillColor = skin.solvedOverlayFill
             overlay.strokeColor = skin.solvedOverlayBorder
             overlay.lineWidth = 2
@@ -128,7 +128,7 @@ class SectorNode: SKNode {
             }
 
         case .locked:
-            let overlay = SKShapeNode(rect: overlayRect)
+            let overlay = SKShapeNode(rect: overlayRect, cornerRadius: 10)
             overlay.fillColor = skin.lockedOverlayFill
             overlay.strokeColor = skin.lockedOverlayBorder.withAlphaComponent(0.25)
             overlay.lineWidth = 1
@@ -146,7 +146,7 @@ class SectorNode: SKNode {
             }
 
         case .inactive:
-            let overlay = SKShapeNode(rect: overlayRect)
+            let overlay = SKShapeNode(rect: overlayRect, cornerRadius: 10)
             overlay.fillColor = skin.inactiveOverlayFill
             overlay.strokeColor = skin.inactiveOverlayBorder.withAlphaComponent(0.3)
             overlay.lineWidth = 1
@@ -263,7 +263,7 @@ class SectorNode: SKNode {
         ring.run(SKAction.sequence([SKAction.group([expand, fadeRing]), SKAction.removeFromParent()]))
 
         // 3. Flash overlay
-        let flash = SKShapeNode(rect: rect)
+        let flash = SKShapeNode(rect: rect, cornerRadius: 10)
         flash.fillColor = skin.solvedFlashColor
         flash.strokeColor = .clear
         flash.zPosition = 18
@@ -291,7 +291,7 @@ class SectorNode: SKNode {
 
     private func animateSectorFailed(center: CGPoint, rect: CGRect) {
         // 1. Flash
-        let flash = SKShapeNode(rect: rect)
+        let flash = SKShapeNode(rect: rect, cornerRadius: 10)
         flash.fillColor = skin.failedFlashColor
         flash.strokeColor = .clear
         flash.zPosition = 18
