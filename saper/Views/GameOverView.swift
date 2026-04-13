@@ -43,6 +43,26 @@ struct GameOverView: View {
                 .cornerRadius(12)
 
                 VStack(spacing: 12) {
+                    if (gameState.gameMode == .endless || gameState.gameMode == .hardcore)
+                        && gameState.undoMineAvailable > 0 {
+                        Button(action: { gameState.undoMineAfterGameOver() }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.uturn.backward")
+                                Text("Undo Mine  ×\(gameState.undoMineAvailable)")
+                                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.orange.opacity(0.35))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.orange.opacity(0.7), lineWidth: 1)
+                            )
+                        }
+                    }
+
                     Button(action: onPlayAgain) {
                         HStack {
                             Image(systemName: "arrow.counterclockwise")
