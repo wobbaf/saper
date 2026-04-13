@@ -215,9 +215,22 @@ class GameState: ObservableObject {
             }
 
             // If this was the sector's first tap, ensureSafeFirstTap may have relocated a
-            // mine — refresh any already-revealed border tiles in neighbouring sectors.
+            // mine — refresh already-revealed tiles in this sector AND neighbouring sectors.
             if wasFirstTap {
-                let staleTiles = boardManager.recomputeRevealedBorderTiles(around: sectorCoord)
+                var staleTiles = boardManager.recomputeRevealedBorderTiles(around: sectorCoord)
+                // Also re-render revealed tiles within the same sector — the mine may have
+                // moved to a position adjacent to an already-revealed tile in this sector.
+                if let sec = boardManager.sector(at: sectorCoord) {
+                    let ox = sectorCoord.originTileX
+                    let oy = sectorCoord.originTileY
+                    for row in 0..<Constants.sectorSize {
+                        for col in 0..<Constants.sectorSize {
+                            if sec.tiles[row][col].state == .revealed {
+                                staleTiles.append(FloodFill.TilePosition(globalX: ox + col, globalY: oy + row))
+                            }
+                        }
+                    }
+                }
                 if !staleTiles.isEmpty {
                     onTilesRevealed?(staleTiles)
                 }
