@@ -7,6 +7,7 @@ struct MainMenuView: View {
     @State private var showSettings = false
     @State private var showLeaderboard = false
     @State private var showShop = false
+    @State private var showHowToPlay = false
     @State private var animateTitle = false
     @State private var titleGlowPhase = false
     @State private var pendingMode: GameMode? = nil
@@ -88,10 +89,11 @@ struct MainMenuView: View {
                 .padding(.bottom, 20)
 
                 // Bottom buttons
-                HStack(spacing: 36) {
+                HStack(spacing: 28) {
                     iconButton(icon: "gearshape.fill", label: "Settings", action: { showSettings = true })
                     iconButton(icon: "trophy.fill", label: "Scores", action: { showLeaderboard = true })
                     iconButton(icon: "arrow.up.circle.fill", label: "Upgrades", action: { showShop = true }, accent: true)
+                    iconButton(icon: "book.fill", label: "Guide", action: { showHowToPlay = true })
                 }
                 .padding(.bottom, 30)
             }
@@ -104,6 +106,9 @@ struct MainMenuView: View {
         }
         .sheet(isPresented: $showShop) {
             PrestigeShopView(gameState: gameState)
+        }
+        .sheet(isPresented: $showHowToPlay) {
+            HowToPlayView(gameState: gameState)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
