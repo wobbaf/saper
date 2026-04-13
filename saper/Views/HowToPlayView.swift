@@ -8,6 +8,9 @@ struct HowToPlayView: View {
 
     var body: some View {
         NavigationView {
+            ZStack {
+                LinearGradient(colors: theme.backgroundColors, startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
 
@@ -95,8 +98,12 @@ struct HowToPlayView: View {
                 }
                 .padding(20)
             }
+            .scrollContentBackground(.hidden)
+            } // ZStack
             .navigationTitle("How to Play")
             .navigationBarColorScheme(theme.isDark ? .dark : .light)
+            .toolbarBackground(theme.backgroundColors.first ?? .clear, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
@@ -115,8 +122,10 @@ struct HowToPlayView: View {
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundColor(theme.accentColor)
                 .tracking(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
             content()
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func rule(icon: String, color: Color, title: String, body: String) -> some View {
@@ -136,8 +145,10 @@ struct HowToPlayView: View {
                     .foregroundColor(theme.primaryTextColor.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
         .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.cardBackground)
         .cornerRadius(10)
     }
