@@ -223,10 +223,6 @@ class GameState: ObservableObject {
                 }
             }
 
-            if profile.autoFlagEnabled {
-                applyAutoFlags(around: revealed)
-            }
-
         case .mine(let coord, let gx, let gy):
             solveStreak = 0
             AudioManager.shared.play(.mineExplosion)
@@ -424,9 +420,6 @@ class GameState: ObservableObject {
                     }
                 }
 
-                if profile.autoFlagEnabled {
-                    applyAutoFlags(around: revealed)
-                }
             }
 
         case .mine(let coord, let gx, let gy):
