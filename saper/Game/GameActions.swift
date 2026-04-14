@@ -47,9 +47,20 @@ struct GameActions {
 
         // Check for mine
         if sector.tiles[localY][localX].hasMine {
-            sector.tiles[localY][localX].state = .mine
-            sector.isModified = true
-            return .mine(sectorCoord: sectorCoord, globalX: globalX, globalY: globalY)
+            if gameState.islandImmunityActive {
+                // Silently relocate the mine — revealed tiles are never touched
+                SectorGenerator.ensureSafeFirstTap(
+                    sector: sector,
+                    localX: localX,
+                    localY: localY,
+                    globalSeed: gameState.boardManager.globalSeed
+                )
+                // Fall through: tile is now mine-free, reveal it normally below
+            } else {
+                sector.tiles[localY][localX].state = .mine
+                sector.isModified = true
+                return .mine(sectorCoord: sectorCoord, globalX: globalX, globalY: globalY)
+            }
         }
 
         // Compute adjacent count

@@ -124,11 +124,6 @@ class GameState: ObservableObject {
 
         let sectorCoord = SectorCoordinate(fromTileX: globalX, tileY: globalY)
 
-        // Island immunity: treat every tap as a "first tap" so mine relocation always fires.
-        if islandImmunityActive, let sector = boardManager.sector(at: sectorCoord) {
-            sector.firstTapDone = false
-        }
-
         // Capture whether this is the sector's first tap before GameActions sets firstTapDone.
         // If it is, ensureSafeFirstTap may relocate a mine, making neighbour border counts stale.
         let wasFirstTap = boardManager.sector(at: sectorCoord)?.firstTapDone == false
@@ -214,27 +209,7 @@ class GameState: ObservableObject {
                 }
             }
 
-            // If this was the sector's first tap, ensureSafeFirstTap may have relocated a
-            // mine — refresh already-revealed tiles in this sector AND neighbouring sectors.
-            if wasFirstTap {
-                var staleTiles = boardManager.recomputeRevealedBorderTiles(around: sectorCoord)
-                // Also re-render revealed tiles within the same sector — the mine may have
-                // moved to a position adjacent to an already-revealed tile in this sector.
-                if let sec = boardManager.sector(at: sectorCoord) {
-                    let ox = sectorCoord.originTileX
-                    let oy = sectorCoord.originTileY
-                    for row in 0..<Constants.sectorSize {
-                        for col in 0..<Constants.sectorSize {
-                            if sec.tiles[row][col].state == .revealed {
-                                staleTiles.append(FloodFill.TilePosition(globalX: ox + col, globalY: oy + row))
-                            }
-                        }
-                    }
-                }
-                if !staleTiles.isEmpty {
-                    onTilesRevealed?(staleTiles)
-                }
-            }
+            _ = wasFirstTap // mine relocation never retroactively updates revealed tiles
 
             // Check sector completion for all affected sectors
             var checkedSectors: Set<SectorCoordinate> = []
