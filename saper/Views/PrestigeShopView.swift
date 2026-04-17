@@ -57,6 +57,7 @@ struct PrestigeShopView: View {
                 }
             }
         }
+        .onAppear { AnalyticsManager.screenView("prestige_shop") }
     }
 }
 
@@ -159,6 +160,12 @@ private struct PrestigeRow: View {
         guard let cost = nextCost, canAfford else { return }
         gameState.profile.gems -= cost
         gameState.profile.applyPrestige(upgrade)
+        AnalyticsManager.prestigeUpgradePurchased(
+            upgrade: upgrade,
+            newLevel: currentLevel,
+            cost: cost,
+            gemsAfter: gameState.profile.gems
+        )
         gameState.objectWillChange.send()
     }
 }

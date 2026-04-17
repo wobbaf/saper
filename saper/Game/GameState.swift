@@ -15,10 +15,6 @@ class GameState: ObservableObject {
     @Published var isPlaying: Bool = false
     /// The sector currently centered in the camera — updated by GameScene.
     var focusedSector: SectorCoordinate = SectorCoordinate(x: 0, y: 0)
-    /// Current difficulty tier (0 = base). Increments every sectorsPerDifficultyTier sectors solved.
-    @Published var difficultyTier: Int = 0
-    /// Flat density bonus chosen at run start (stacks on top of tier ramp).
-    private(set) var startingDifficultyBonus: Double = 0
     /// Consecutive sectors solved without hitting a mine. Resets on mine hit.
     @Published var solveStreak: Int = 0
     /// Set to show gem-unlock confirmation dialog before spending gems.
@@ -41,13 +37,16 @@ class GameState: ObservableObject {
     var onMineHit: ((SectorCoordinate) -> Void)?
     var onSectorSolved: ((SectorCoordinate) -> Void)?
     var onSectorReset: ((SectorCoordinate) -> Void)?
-    var onDifficultyTierChanged: ((Int) -> Void)?
     var onSectorUnlocked: ((SectorCoordinate, Int) -> Void)?
     var onTileGemCollected: ((Int, Int, Int) -> Void)?  // globalX, globalY, amount
     var onPiggyBankFound: ((Int, Int, Int) -> Void)?    // globalX, globalY, gems
     var onAchievementUnlocked: ((Achievement) -> Void)?
     /// Fired when a Mine Shield (or Last Stand) absorbs a hit — gx, gy of the mine tile.
     var onShieldAbsorbed: ((Int, Int) -> Void)?
+    /// Fired when the player changes their active skin.
+    var onSkinChanged: (() -> Void)?
+
+    private var sessionStartDate: Date?
 
     init(profile: PlayerProfile, seed: UInt64) {
         self.profile = profile
@@ -106,6 +105,7 @@ class GameState: ObservableObject {
         default:
             runPerks[perk.rawValue, default: 0] += 1
         }
+        AnalyticsManager.perkSelected(perk: perk, level: profile.level, mode: gameMode)
         pendingPerkOffer = []
         objectWillChange.send()
     }
@@ -123,15 +123,6 @@ class GameState: ObservableObject {
         if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
 
         let sectorCoord = SectorCoordinate(fromTileX: globalX, tileY: globalY)
-
-        // Capture whether this is the sector's first tap before GameActions sets firstTapDone.
-        // If it is, ensureSafeFirstTap may relocate a mine, making neighbour border counts stale.
-        let wasFirstTap = boardManager.sector(at: sectorCoord)?.firstTapDone == false
-
-        // Check if sector needs adjacent counts computed
-        if let sector = boardManager.sector(at: sectorCoord), !sector.firstTapDone {
-            boardManager.computeAdjacentCounts(for: sector)
-        }
 
         let result = GameActions.revealTile(
             globalX: globalX,
@@ -151,6 +142,7 @@ class GameState: ObservableObject {
                 let xpGained = Int(Double(revealed.count * Constants.xpPerTileReveal) * xpMultiplier)
                 let leveledUp = profile.addXP(xpGained)
                 if leveledUp && pendingPerkOffer.isEmpty {
+                    AnalyticsManager.levelUp(level: profile.level, mode: gameMode)
                     pendingPerkOffer = RunPerk.generateOffer(gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
                     AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
                     HapticsManager.shared.play(.levelUp)
@@ -209,8 +201,6 @@ class GameState: ObservableObject {
                 }
             }
 
-            _ = wasFirstTap // mine relocation never retroactively updates revealed tiles
-
             // Check sector completion for all affected sectors
             var checkedSectors: Set<SectorCoordinate> = []
             for pos in revealed {
@@ -228,7 +218,26 @@ class GameState: ObservableObject {
             HapticsManager.shared.play(.mineHit)
             MusicEngine.shared.triggerMineHit()
 
-            if checkAndConsumeAbsorber() {
+            if islandImmunityActive {
+                AnalyticsManager.mineHit(mode: gameMode, absorber: "island_immunity", livesRemaining: livesRemaining)
+                // Island immunity absorbs the hit — mine stays in place, sector stays active
+                onTileStateChanged?(gx, gy, .mine)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                    guard let self = self else { return }
+                    let sc = SectorCoordinate(fromTileX: gx, tileY: gy)
+                    if let sector = self.boardManager.sector(at: sc) {
+                        let lx = gx - sc.originTileX
+                        let ly = gy - sc.originTileY
+                        if lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize {
+                            sector.tiles[ly][lx].state = .hidden
+                            sector.isModified = true
+                        }
+                    }
+                    self.onTileStateChanged?(gx, gy, .hidden)
+                }
+            } else if checkAndConsumeAbsorber() {
+                let absorberType = gameMode == .practice ? "practice" : "mine_shield"
+                AnalyticsManager.mineHit(mode: gameMode, absorber: absorberType, livesRemaining: livesRemaining)
                 // Shield/Last Stand absorbed: show mine briefly then reset, no lock, no life lost
                 onTileStateChanged?(gx, gy, .mine)
                 onShieldAbsorbed?(gx, gy)
@@ -262,6 +271,7 @@ class GameState: ObservableObject {
                         isGameOver = true
                     }
                 }
+                AnalyticsManager.mineHit(mode: gameMode, absorber: "none", livesRemaining: max(0, livesRemaining))
             }
 
         case .alreadyRevealed:
@@ -427,7 +437,22 @@ class GameState: ObservableObject {
             HapticsManager.shared.play(.mineHit)
             MusicEngine.shared.triggerMineHit()
 
-            if checkAndConsumeAbsorber() {
+            if islandImmunityActive {
+                onTileStateChanged?(gx, gy, .mine)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                    guard let self = self else { return }
+                    let sc = SectorCoordinate(fromTileX: gx, tileY: gy)
+                    if let sector = self.boardManager.sector(at: sc) {
+                        let lx = gx - sc.originTileX
+                        let ly = gy - sc.originTileY
+                        if lx >= 0, lx < Constants.sectorSize, ly >= 0, ly < Constants.sectorSize {
+                            sector.tiles[ly][lx].state = .hidden
+                            sector.isModified = true
+                        }
+                    }
+                    self.onTileStateChanged?(gx, gy, .hidden)
+                }
+            } else if checkAndConsumeAbsorber() {
                 onTileStateChanged?(gx, gy, .mine)
                 onShieldAbsorbed?(gx, gy)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
@@ -472,6 +497,7 @@ class GameState: ObservableObject {
         if isGameOver || isPaused || !pendingPerkOffer.isEmpty { return }
         let revealed = GameActions.useSolveSectorBooster(sectorCoord: sectorCoord, gameState: self)
         if !revealed.isEmpty {
+            AnalyticsManager.boosterUsed(type: .solveSector, remaining: solveSectorAvailable, mode: gameMode)
             AudioManager.shared.play(.boosterUsed)
             HapticsManager.shared.play(.boosterSolveSector)
             tilesRevealedThisSession += revealed.count
@@ -486,6 +512,7 @@ class GameState: ObservableObject {
     func unlockSector(_ coord: SectorCoordinate) {
         let cost = unlockCost(for: coord)
         if GameActions.unlockSectorWithGems(sectorCoord: coord, gameState: self) {
+            AnalyticsManager.sectorUnlocked(cost: cost, gemsAfter: profile.gems, mode: gameMode)
             AudioManager.shared.play(.boosterUsed)
             HapticsManager.shared.play(.lockedSectorTap)
             onSectorStatusChanged?(coord, .active)
@@ -505,6 +532,7 @@ class GameState: ObservableObject {
         // Cursed sectors block the undoMine booster
         if let sector = boardManager.sector(at: sectorCoord), sector.modifier == .cursed { return }
         if GameActions.useUndoMineBooster(sectorCoord: sectorCoord, gameState: self) {
+            AnalyticsManager.boosterUsed(type: .undoMine, remaining: undoMineAvailable, mode: gameMode)
             AudioManager.shared.play(.boosterUsed)
             HapticsManager.shared.play(.boosterRevealOne)
             onSectorReset?(sectorCoord)
@@ -570,6 +598,7 @@ class GameState: ObservableObject {
             guard !profile.unlockedAchievements.contains(achievement.id) else { continue }
             if achievement.condition(profile) {
                 profile.unlockedAchievements.append(achievement.id)
+                AnalyticsManager.achievementUnlocked(id: achievement.id, name: achievement.displayName)
                 onAchievementUnlocked?(achievement)
             }
         }
@@ -592,18 +621,10 @@ class GameState: ObservableObject {
         MusicEngine.shared.sectorsCompleted = sectorsSolvedThisSession
 
         if gameMode != .practice {
-            // Difficulty tier bump
-            let newTier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
-                             Constants.maxDifficultyTier)
-            if newTier > difficultyTier {
-                difficultyTier = newTier
-                boardManager.difficultyBonus = startingDifficultyBonus + Double(newTier) * Constants.densityBonusPerTier
-                onDifficultyTierChanged?(newTier)
-            }
-
             let xpGained = Int(Double(Constants.xpPerSectorSolve) * xpMultiplier * streakXpMultiplier)
             let leveledUp = profile.addXP(xpGained)
             if leveledUp && pendingPerkOffer.isEmpty {
+                AnalyticsManager.levelUp(level: profile.level, mode: gameMode)
                 let offerCount = profile.extraChoiceUnlocked ? 4 : 3
                 pendingPerkOffer = RunPerk.generateOffer(count: offerCount, gameMode: gameMode, livesRemaining: livesRemaining, maxLives: maxLives)
                 AudioManager.shared.playCompound(SoundEffect.levelUpFanfare)
@@ -651,13 +672,18 @@ class GameState: ObservableObject {
             checkAchievements()
         }
 
+        if gameMode != .practice {
+            let gemReward = boardManager.sector(at: coord)?.gemReward ?? 0
+            AnalyticsManager.sectorSolved(mode: gameMode, streak: solveStreak, gemReward: gemReward)
+        }
+
         onSectorSolved?(coord)
         onSectorStatusChanged?(coord, .solved)
     }
 
     // MARK: - Game Lifecycle
 
-    func startGame(mode: GameMode, startingDifficultyBonus: Double = 0) {
+    func startGame(mode: GameMode) {
         gameMode = mode
         isGameOver = false
         isPaused = false
@@ -672,22 +698,19 @@ class GameState: ObservableObject {
         // Per-run state reset
         profile.xp = 0
         profile.level = 1
-        difficultyTier = 0
-        self.startingDifficultyBonus = startingDifficultyBonus
         islandImmunityActive = profile.islandImmunityEnabled && mode != .practice
-        boardManager.difficultyBonus = startingDifficultyBonus
 
-        // Per-run boosters: base stock + headstart prestige bonus
+        // Per-run boosters: fixed starting stock + headstart prestige bonus
         // Practice mode has no boosters — it's pure minesweeper
         if mode == .practice {
             runBoosters = [:]
         } else {
             let headstart = profile.headstartLevel
             runBoosters = [
-                BoosterType.solveSector.rawValue: profile.solveSectorCount + headstart,
-                BoosterType.undoMine.rawValue:    profile.undoMineCount + headstart,
-                BoosterType.mineShield.rawValue:  profile.mineShieldCount + headstart,
-                BoosterType.refillHeart.rawValue: profile.refillHeartCount
+                BoosterType.solveSector.rawValue: 1 + headstart,
+                BoosterType.undoMine.rawValue:    1 + headstart,
+                BoosterType.mineShield.rawValue:  1,
+                BoosterType.refillHeart.rawValue: 1
             ]
         }
         runPerks = [:]
@@ -697,6 +720,9 @@ class GameState: ObservableObject {
         // Apply density shield prestige
         boardManager.densityReduction = Double(profile.densityShieldLevel) * 0.03
 
+        let newSeed = SeededRandom.newGlobalSeed()
+        boardManager.globalSeed = newSeed
+        ProfilePersistence.saveSeed(newSeed)
         boardManager.reset()
 
         // Pre-generate and activate the 3×3 starting cluster so the player
@@ -706,6 +732,9 @@ class GameState: ObservableObject {
                 boardManager.ensureSector(at: SectorCoordinate(x: dx, y: dy)).status = .active
             }
         }
+
+        sessionStartDate = Date()
+        AnalyticsManager.gameSessionStart(mode: mode, resumed: false)
 
         syncAudioHaptics()
         MusicEngine.shared.sectorsCompleted = 0
@@ -717,9 +746,9 @@ class GameState: ObservableObject {
     }
 
     /// Explicitly resets the board and clears any saved game. The only way to discard a save.
-    func resetBoard(mode: GameMode, startingDifficultyBonus: Double = 0) {
+    func resetBoard(mode: GameMode) {
         GamePersistence.clearSave(for: mode)
-        startGame(mode: mode, startingDifficultyBonus: startingDifficultyBonus)
+        startGame(mode: mode)
     }
 
 
@@ -743,23 +772,20 @@ class GameState: ObservableObject {
         gemsCollectedThisSession = saveData.gemsCollected
         livesRemaining = saveData.livesRemaining ?? maxLives
         runBoosters = saveData.runBoosters ?? [
-            BoosterType.solveSector.rawValue: profile.solveSectorCount,
-            BoosterType.undoMine.rawValue:    profile.undoMineCount,
-            BoosterType.mineShield.rawValue:  profile.mineShieldCount,
-            BoosterType.refillHeart.rawValue: profile.refillHeartCount
+            BoosterType.solveSector.rawValue: 1,
+            BoosterType.undoMine.rawValue:    1,
+            BoosterType.mineShield.rawValue:  1,
+            BoosterType.refillHeart.rawValue: 1
         ]
         runPerks = saveData.runPerks ?? [:]
         pendingPerkOffer = []
         islandImmunityActive = false  // immunity is never granted on resume
         isPlaying = true
 
-        // Restore difficulty tier from saved sector count
-        let tier = min(sectorsSolvedThisSession / Constants.sectorsPerDifficultyTier,
-                      Constants.maxDifficultyTier)
-        difficultyTier = tier
-        startingDifficultyBonus = saveData.startingDifficultyBonus ?? 0
-        boardManager.difficultyBonus = startingDifficultyBonus + Double(tier) * Constants.densityBonusPerTier
         boardManager.densityReduction = Double(profile.densityShieldLevel) * 0.03
+
+        sessionStartDate = Date()
+        AnalyticsManager.gameSessionStart(mode: saveData.gameMode, resumed: true)
 
         syncAudioHaptics()
         MusicEngine.shared.start()
@@ -798,7 +824,21 @@ class GameState: ObservableObject {
         if gameMode == .timed {
             timerManager.stop()
         }
+        logSessionEnd(quit: false)
         recordLeaderboardEntry()
+    }
+
+    func logSessionEnd(quit: Bool) {
+        let duration = sessionStartDate.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        AnalyticsManager.gameSessionEnd(
+            mode: gameMode,
+            sectors: sectorsSolvedThisSession,
+            tiles: tilesRevealedThisSession,
+            gems: gemsCollectedThisSession,
+            durationSeconds: duration,
+            quit: quit
+        )
+        sessionStartDate = nil
     }
 
     /// Records a leaderboard entry for the current session (called on game over or quit).

@@ -18,6 +18,7 @@ struct HowToPlayView: View {
                     }
                 }
         }
+        .onAppear { AnalyticsManager.screenView("how_to_play") }
     }
 
     @ViewBuilder
@@ -119,7 +120,7 @@ struct HowToPlayView: View {
                          body: "The 3×3 cluster around (0,0) is always pre-activated. Tap somewhere there first for a safe opening.")
                     rule(icon: "shield.lefthalf.filled", color: .cyan,
                          title: "Island Immunity",
-                         body: "With Island Immunity on (Settings), mines are relocated instead of exploding until you uncover your first flood-fill island. Resume never grants this.")
+                         body: "With Island Immunity on (Settings), mine hits are absorbed without locking your sector until you uncover your first flood-fill island. The mine stays in place — flag it and work around it. Resume never grants this.")
                     rule(icon: "flag.fill", color: .green,
                          title: "Flag-Only Mode",
                          body: "Enable in Settings to swap controls: tap places a flag, long-press reveals. Chord still works the same.")

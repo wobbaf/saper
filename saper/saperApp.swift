@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseCore
 
 @main
 struct saperApp: App {
@@ -6,6 +7,8 @@ struct saperApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        FirebaseApp.configure()
+
         let profile = ProfilePersistence.loadProfile()
         let seed = ProfilePersistence.loadOrCreateSeed()
         _gameState = StateObject(wrappedValue: GameState(profile: profile, seed: seed))
@@ -46,8 +49,7 @@ struct saperApp: App {
                 gemsCollected: gameState.gemsCollectedThisSession,
                 livesRemaining: gameState.livesRemaining,
                 runBoosters: gameState.runBoosters,
-                runPerks: gameState.runPerks,
-                startingDifficultyBonus: gameState.startingDifficultyBonus
+                runPerks: gameState.runPerks
             )
         }
     }

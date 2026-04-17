@@ -108,6 +108,7 @@ struct GameOverView: View {
         .sheet(isPresented: $showLeaderboard) {
             LeaderboardView(gameState: gameState)
         }
+        .onAppear { AnalyticsManager.screenView("game_over") }
     }
 
     private func currentHighScore() -> Int {

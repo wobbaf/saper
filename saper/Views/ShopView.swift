@@ -62,6 +62,7 @@ struct ShopView: View {
                 }
             }
         }
+        .onAppear { AnalyticsManager.screenView("booster_shop") }
     }
 }
 
@@ -150,6 +151,7 @@ private struct ShopRow: View {
         case .mineShield:   gameState.profile.mineShieldCount += 1
         case .refillHeart:  gameState.profile.refillHeartCount += 1
         }
+        AnalyticsManager.boosterPurchased(type: item.booster, cost: item.price, gemsAfter: gameState.profile.gems)
         // If buying mid-run, also add to the live run stock so the HUD updates immediately
         if gameState.isPlaying {
             gameState.runBoosters[item.booster.rawValue, default: 0] += 1
