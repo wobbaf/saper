@@ -49,11 +49,8 @@ struct GameContainerView: View {
             if gameState.isPaused {
                 PauseMenuView(gameState: gameState) {
                     gameState.resumeGame()
-                } onRestart: {
-                    showResetConfirmation = true
-                } onShop: {
-                    showShop = true
                 } onMainMenu: {
+                    gameState.logSessionEnd(quit: true)
                     gameState.recordLeaderboardEntry()
                     if gameState.gameMode == .endless || gameState.gameMode == .hardcore {
                         GamePersistence.saveBoard(
@@ -64,8 +61,7 @@ struct GameContainerView: View {
                             gemsCollected: gameState.gemsCollectedThisSession,
                             livesRemaining: gameState.livesRemaining,
                             runBoosters: gameState.runBoosters,
-                            runPerks: gameState.runPerks,
-                            startingDifficultyBonus: gameState.startingDifficultyBonus
+                            runPerks: gameState.runPerks
                         )
                     }
                     gameState.isPlaying = false

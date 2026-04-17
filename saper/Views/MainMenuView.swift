@@ -10,8 +10,6 @@ struct MainMenuView: View {
     @State private var showHowToPlay = false
     @State private var animateTitle = false
     @State private var titleGlowPhase = false
-    @State private var pendingMode: GameMode? = nil
-
     private var theme: SkinUITheme { gameState.profile.currentSkin.uiTheme }
 
     var body: some View {
@@ -36,20 +34,20 @@ struct MainMenuView: View {
                     ZStack {
                         // Glow layer — only for skins with dark, vibrant backgrounds
                         if theme.showStarfield {
-                            Text("MINESWEEPER FOREVER")
-                                .font(.system(size: 28, weight: .black, design: .monospaced))
+                            Text("MINESWEEPER")
+                                .font(.system(size: 36, weight: .black, design: .monospaced))
                                 .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
                                 .blur(radius: titleGlowPhase ? 14 : 8)
                                 .opacity(titleGlowPhase ? 0.65 : 0.35)
                         }
 
-                        Text("MINESWEEPER FOREVER")
-                            .font(.system(size: 28, weight: .black, design: .monospaced))
+                        Text("MINESWEEPER")
+                            .font(.system(size: 36, weight: .black, design: .monospaced))
                             .foregroundStyle(LinearGradient(colors: theme.titleColors, startPoint: .leading, endPoint: .trailing))
                             .opacity(animateTitle ? 1.0 : 0.8)
                     }
 
-                    Text("I N F I N I T Y")
+                    Text("F O R E V E R")
                         .font(.system(size: 20, weight: .light, design: .monospaced))
                         .foregroundColor(theme.secondaryTextColor)
                         .tracking(8)
@@ -111,19 +109,12 @@ struct MainMenuView: View {
             HowToPlayView(gameState: gameState)
         }
         .onAppear {
+            AnalyticsManager.screenView("main_menu")
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 animateTitle = true
             }
             withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
                 titleGlowPhase = true
-            }
-        }
-        .sheet(item: $pendingMode) { mode in
-            DifficultyPickerSheet(mode: mode, theme: theme) { bonus in
-                pendingMode = nil
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    gameState.resetBoard(mode: mode, startingDifficultyBonus: bonus)
-                }
             }
         }
     }
@@ -136,7 +127,7 @@ struct MainMenuView: View {
         if GamePersistence.hasMeaningfulSave(for: mode) && gameState.resumeFromSave(mode: mode) {
             // Auto-resume — player had actual progress
         } else {
-            pendingMode = mode
+            gameState.resetBoard(mode: mode)
         }
     }
 
@@ -216,109 +207,6 @@ struct StatBadge: View {
         .padding(.vertical, 6)
         .background(cardBg)
         .cornerRadius(8)
-    }
-}
-
-// MARK: - Difficulty Picker
-
-private struct DifficultyOption {
-    let name: String
-    let description: String
-    let bonus: Double
-    let color: Color
-}
-
-private let difficultyOptions: [DifficultyOption] = [
-    .init(name: "Normal",    description: "Gradual ramp. Good starting point.",  bonus: 0.00, color: .green),
-    .init(name: "Hard",      description: "Moderate density from the start.",    bonus: 0.15, color: .orange),
-    .init(name: "Insane",    description: "High density. Little breathing room.", bonus: 0.30, color: .red),
-    .init(name: "Nightmare", description: "Near-maximum mines. No mercy.",        bonus: 0.45, color: .purple),
-]
-
-struct DifficultyPickerSheet: View {
-    let mode: GameMode
-    let theme: SkinUITheme
-    let onSelect: (Double) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            ZStack {
-                theme.backgroundColors[0].ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    Text("Starting density affects how many mines\nappear in every sector from turn one.")
-                        .font(.system(size: 12))
-                        .foregroundColor(theme.secondaryTextColor)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 16)
-
-                    VStack(spacing: 12) {
-                        ForEach(difficultyOptions, id: \.name) { option in
-                            Button(action: { onSelect(option.bonus) }) {
-                                HStack(spacing: 16) {
-                                    Circle()
-                                        .fill(option.color.opacity(0.2))
-                                        .frame(width: 44, height: 44)
-                                        .overlay(
-                                            Circle().stroke(option.color.opacity(0.6), lineWidth: 1.5)
-                                        )
-                                        .overlay(
-                                            Text(densityLabel(option.bonus))
-                                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                                .foregroundColor(option.color)
-                                        )
-
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(option.name)
-                                            .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                            .foregroundColor(theme.primaryTextColor)
-                                        Text(option.description)
-                                            .font(.system(size: 12))
-                                            .foregroundColor(theme.secondaryTextColor)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(option.color.opacity(0.7))
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(theme.cardBackground)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 14)
-                                                .stroke(option.color.opacity(0.2), lineWidth: 1)
-                                        )
-                                )
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
-                    Spacer()
-                }
-            }
-            .navigationTitle("Choose Difficulty")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarColorScheme(theme.isDark ? .dark : .light)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(theme.secondaryTextColor)
-                }
-            }
-        }
-    }
-
-    private func densityLabel(_ bonus: Double) -> String {
-        let base = 0.15 + bonus
-        return "\(Int(base * 100))%+"
     }
 }
 

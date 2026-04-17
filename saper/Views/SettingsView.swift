@@ -86,16 +86,6 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("World Seed") {
-                    HStack {
-                        Text("Seed")
-                        Spacer()
-                        Text("\(gameState.boardManager.globalSeed)")
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundColor(.secondary)
-                    }
-                }
-
                 Section("High Scores") {
                     HStack {
                         Text("Endless")
@@ -239,7 +229,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showSkinPicker) {
                 SkinPickerView(gameState: gameState)
+                    .onAppear { AnalyticsManager.screenView("skin_picker") }
             }
         }
+        .onAppear { AnalyticsManager.screenView("settings") }
     }
 }

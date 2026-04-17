@@ -97,6 +97,7 @@ struct LeaderboardView: View {
                 AchievementListView(gameState: gameState)
             }
         }
+        .onAppear { AnalyticsManager.screenView("leaderboard") }
     }
 
     @ViewBuilder
